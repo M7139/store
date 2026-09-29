@@ -1,9 +1,11 @@
 package com.ga.store.controller;
 
 import com.ga.store.dto.LoginRequest;
+import com.ga.store.dto.LoginResponse;
 import com.ga.store.dto.RegisterRequest;
 import com.ga.store.dto.UserResponse;
 import com.ga.store.model.User;
+import com.ga.store.security.JwtUtils;
 import com.ga.store.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +16,11 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final UserService userService;
+    private final JwtUtils jwtUtils;
 
-    public AuthController(UserService userService) {
+    public AuthController(UserService userService, JwtUtils jwtUtils) {
         this.userService = userService;
+        this.jwtUtils = jwtUtils;
     }
 
     @PostMapping("/register")
@@ -38,11 +42,13 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
 
         User user = userService.loginUser(request);
 
-        UserResponse response = new UserResponse(
+        String token = jwtUtils.generateToken(user.getEmail());
+
+        UserResponse userResponse = new UserResponse(
                 user.getId(),
                 user.getFirstName(),
                 user.getLastName(),
@@ -50,6 +56,11 @@ public class AuthController {
                 user.getRole(),
                 user.getStatus(),
                 user.isVerified()
+        );
+
+        LoginResponse response = new LoginResponse(
+                token,
+                userResponse
         );
 
         return new ResponseEntity<>(response, HttpStatus.OK);
