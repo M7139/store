@@ -1,7 +1,10 @@
 package com.ga.store.service;
 
+import com.ga.store.dto.RegisterRequest;
+import com.ga.store.exception.InformationExistsException;
 import com.ga.store.model.User;
 import com.ga.store.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,9 +14,11 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public List<User> getAllUsers() {
@@ -30,5 +35,23 @@ public class UserService {
 
     public boolean emailExists(String email) {
         return userRepository.existsByEmail(email);
+    }
+
+    public User registerUser(RegisterRequest request) {
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new InformationExistsException("User with this email already exists");
+        }
+
+        String hashedPassword = passwordEncoder.encode(request.getPassword());
+
+        User user = new User(
+                request.getFirstName(),
+                request.getLastName(),
+                request.getEmail(),
+                hashedPassword
+        );
+
+        return userRepository.save(user);
     }
 }
