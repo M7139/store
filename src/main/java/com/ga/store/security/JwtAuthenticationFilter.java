@@ -44,29 +44,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = authorizationHeader.substring(7);
 
-        try {
+        if (!jwtUtils.validateToken(token)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-            String email = jwtUtils.extractEmail(token);
+        String email = jwtUtils.extractEmail(token);
 
-            if (email != null &&
-                    SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (email != null &&
+                SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                UserDetails userDetails =
-                        customUserDetailsService.loadUserByUsername(email);
+            UserDetails userDetails =
+                    customUserDetailsService.loadUserByUsername(email);
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
 
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
-            }
-
-        } catch (Exception exception) {
-            // Invalid or expired token
+            SecurityContextHolder.getContext()
+                    .setAuthentication(authentication);
         }
 
         filterChain.doFilter(request, response);
