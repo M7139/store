@@ -7,6 +7,7 @@ import com.ga.store.dto.UserResponse;
 import com.ga.store.model.User;
 import com.ga.store.security.JwtUtils;
 import com.ga.store.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -25,7 +26,8 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<UserResponse> register(
+            @Valid @RequestBody RegisterRequest request) {
 
         User user = userService.registerUser(request);
 
