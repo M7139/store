@@ -9,6 +9,7 @@ import com.ga.store.security.JwtUtils;
 import com.ga.store.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -64,5 +65,14 @@ public class AuthController {
         );
 
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<String> getCurrentUser(Authentication authentication) {
+
+        return new ResponseEntity<>(
+                "Authenticated as: " + authentication.getName(),
+                HttpStatus.OK
+        );
     }
 }
