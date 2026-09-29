@@ -1,5 +1,6 @@
 package com.ga.store.controller;
 
+import com.ga.store.dto.LoginRequest;
 import com.ga.store.dto.RegisterRequest;
 import com.ga.store.dto.UserResponse;
 import com.ga.store.model.User;
@@ -34,5 +35,23 @@ public class AuthController {
         );
 
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<UserResponse> login(@RequestBody LoginRequest request) {
+
+        User user = userService.loginUser(request);
+
+        UserResponse response = new UserResponse(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getRole(),
+                user.getStatus(),
+                user.isVerified()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
