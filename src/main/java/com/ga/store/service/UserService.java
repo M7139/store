@@ -2,6 +2,8 @@ package com.ga.store.service;
 
 import com.ga.store.dto.LoginRequest;
 import com.ga.store.dto.RegisterRequest;
+import com.ga.store.enums.UserStatus;
+import com.ga.store.exception.InactiveAccountException;
 import com.ga.store.exception.InformationExistsException;
 import com.ga.store.exception.InvalidCredentialsException;
 import com.ga.store.model.User;
@@ -65,6 +67,10 @@ public class UserService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new InvalidCredentialsException("Invalid email or password");
+        }
+
+        if (user.getStatus() == UserStatus.INACTIVE) {
+            throw new InactiveAccountException("Account is inactive");
         }
 
         return user;
