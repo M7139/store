@@ -16,9 +16,18 @@ public class GlobalExceptionHandler {
             InformationExistsException exception) {
 
         Map<String, String> response = new HashMap<>();
-
         response.put("message", exception.getMessage());
 
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidCredentialsException(
+            InvalidCredentialsException exception) {
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", exception.getMessage());
+
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
 }
