@@ -29,6 +29,17 @@ public class PasswordResetService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    public PasswordResetToken requestPasswordReset(String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "User with this email not found"
+                        ));
+
+        return createPasswordResetToken(user);
+    }
+
     public PasswordResetToken createPasswordResetToken(User user) {
 
         String token = UUID.randomUUID().toString();
