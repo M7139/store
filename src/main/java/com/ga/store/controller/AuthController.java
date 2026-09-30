@@ -14,7 +14,6 @@ import com.ga.store.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -127,16 +126,6 @@ public class AuthController {
 
         return new ResponseEntity<>(
                 "Authenticated as: " + authentication.getName(),
-                HttpStatus.OK
-        );
-    }
-
-    @GetMapping("/admin-test")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> adminTest() {
-
-        return new ResponseEntity<>(
-                "Admin access granted",
                 HttpStatus.OK
         );
     }
