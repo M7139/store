@@ -18,15 +18,18 @@ public class PasswordResetService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     public PasswordResetService(
             PasswordResetTokenRepository passwordResetTokenRepository,
             UserRepository userRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            EmailService emailService) {
 
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     public PasswordResetToken requestPasswordReset(String email) {
@@ -37,7 +40,14 @@ public class PasswordResetService {
                                 "User with this email not found"
                         ));
 
-        return createPasswordResetToken(user);
+        PasswordResetToken resetToken = createPasswordResetToken(user);
+
+        emailService.sendPasswordResetEmail(
+                user.getEmail(),
+                resetToken.getToken()
+        );
+
+        return resetToken;
     }
 
     public PasswordResetToken createPasswordResetToken(User user) {
