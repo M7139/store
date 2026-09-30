@@ -6,6 +6,7 @@ import com.ga.store.dto.RegisterRequest;
 import com.ga.store.dto.UserResponse;
 import com.ga.store.model.User;
 import com.ga.store.security.JwtUtils;
+import com.ga.store.service.EmailVerificationService;
 import com.ga.store.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -20,10 +21,16 @@ public class AuthController {
 
     private final UserService userService;
     private final JwtUtils jwtUtils;
+    private final EmailVerificationService emailVerificationService;
 
-    public AuthController(UserService userService, JwtUtils jwtUtils) {
+    public AuthController(
+            UserService userService,
+            JwtUtils jwtUtils,
+            EmailVerificationService emailVerificationService) {
+
         this.userService = userService;
         this.jwtUtils = jwtUtils;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @PostMapping("/register")
@@ -71,11 +78,32 @@ public class AuthController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @GetMapping("/verify-email")
+    public ResponseEntity<String> verifyEmail(@RequestParam String token) {
+
+        emailVerificationService.verifyEmail(token);
+
+        return new ResponseEntity<>(
+                "Email verified successfully",
+                HttpStatus.OK
+        );
+    }
+
     @GetMapping("/me")
     public ResponseEntity<String> getCurrentUser(Authentication authentication) {
 
         return new ResponseEntity<>(
                 "Authenticated as: " + authentication.getName(),
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/admin-test")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> adminTest() {
+
+        return new ResponseEntity<>(
+                "Admin access granted",
                 HttpStatus.OK
         );
     }
