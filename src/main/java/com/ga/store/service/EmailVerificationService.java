@@ -1,6 +1,7 @@
 package com.ga.store.service;
 
 import com.ga.store.exception.InformationNotFoundException;
+import com.ga.store.exception.VerificationTokenExpiredException;
 import com.ga.store.model.EmailVerificationToken;
 import com.ga.store.model.User;
 import com.ga.store.repository.EmailVerificationTokenRepository;
@@ -13,15 +14,18 @@ import java.util.UUID;
 @Service
 public class EmailVerificationService {
 
-    private final EmailVerificationTokenRepository tokenRepository;
+    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     public EmailVerificationService(
-            EmailVerificationTokenRepository tokenRepository,
-            UserRepository userRepository) {
+            EmailVerificationTokenRepository emailVerificationTokenRepository,
+            UserRepository userRepository,
+            EmailService emailService) {
 
-        this.tokenRepository = tokenRepository;
+        this.emailVerificationTokenRepository = emailVerificationTokenRepository;
         this.userRepository = userRepository;
+        this.emailService = emailService;
     }
 
     public EmailVerificationToken createVerificationToken(User user) {
@@ -37,20 +41,30 @@ public class EmailVerificationService {
                         expiresAt
                 );
 
-        return tokenRepository.save(verificationToken);
+        EmailVerificationToken savedToken =
+                emailVerificationTokenRepository.save(verificationToken);
+
+        emailService.sendVerificationEmail(
+                user.getEmail(),
+                savedToken.getToken()
+        );
+
+        return savedToken;
     }
 
-    public User verifyEmail(String token) {
+    public void verifyEmail(String token) {
 
         EmailVerificationToken verificationToken =
-                tokenRepository.findByToken(token)
+                emailVerificationTokenRepository.findByToken(token)
                         .orElseThrow(() ->
                                 new InformationNotFoundException(
                                         "Verification token not found"
                                 ));
 
         if (verificationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Verification token has expired");
+            throw new VerificationTokenExpiredException(
+                    "Verification token has expired"
+            );
         }
 
         User user = verificationToken.getUser();
@@ -59,8 +73,6 @@ public class EmailVerificationService {
 
         userRepository.save(user);
 
-        tokenRepository.delete(verificationToken);
-
-        return user;
+        emailVerificationTokenRepository.delete(verificationToken);
     }
 }

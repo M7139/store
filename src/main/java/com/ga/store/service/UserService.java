@@ -3,6 +3,7 @@ package com.ga.store.service;
 import com.ga.store.dto.LoginRequest;
 import com.ga.store.dto.RegisterRequest;
 import com.ga.store.enums.UserStatus;
+import com.ga.store.exception.EmailNotVerifiedException;
 import com.ga.store.exception.InactiveAccountException;
 import com.ga.store.exception.InformationExistsException;
 import com.ga.store.exception.InvalidCredentialsException;
@@ -19,10 +20,16 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailVerificationService emailVerificationService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            EmailVerificationService emailVerificationService) {
+
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailVerificationService = emailVerificationService;
     }
 
     public List<User> getAllUsers() {
@@ -56,7 +63,11 @@ public class UserService {
                 hashedPassword
         );
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        emailVerificationService.createVerificationToken(savedUser);
+
+        return savedUser;
     }
 
     public User loginUser(LoginRequest request) {
@@ -71,6 +82,10 @@ public class UserService {
 
         if (user.getStatus() == UserStatus.INACTIVE) {
             throw new InactiveAccountException("Account is inactive");
+        }
+
+        if (!user.isVerified()) {
+            throw new EmailNotVerifiedException("Email is not verified");
         }
 
         return user;
