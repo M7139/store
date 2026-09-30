@@ -4,6 +4,7 @@ import com.ga.store.dto.ForgotPasswordRequest;
 import com.ga.store.dto.LoginRequest;
 import com.ga.store.dto.LoginResponse;
 import com.ga.store.dto.RegisterRequest;
+import com.ga.store.dto.ResetPasswordRequest;
 import com.ga.store.dto.UserResponse;
 import com.ga.store.model.User;
 import com.ga.store.security.JwtUtils;
@@ -102,6 +103,21 @@ public class AuthController {
 
         return new ResponseEntity<>(
                 "Password reset request created",
+                HttpStatus.OK
+        );
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+
+        passwordResetService.resetPassword(
+                request.getToken(),
+                request.getNewPassword()
+        );
+
+        return new ResponseEntity<>(
+                "Password reset successfully",
                 HttpStatus.OK
         );
     }
