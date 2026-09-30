@@ -65,4 +65,14 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
+
+    @ExceptionHandler(VerificationTokenExpiredException.class)
+    public ResponseEntity<Map<String, String>> handleVerificationTokenExpiredException(
+            VerificationTokenExpiredException exception) {
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", exception.getMessage());
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 }

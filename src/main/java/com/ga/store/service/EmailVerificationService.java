@@ -1,6 +1,7 @@
 package com.ga.store.service;
 
 import com.ga.store.exception.InformationNotFoundException;
+import com.ga.store.exception.VerificationTokenExpiredException;
 import com.ga.store.model.EmailVerificationToken;
 import com.ga.store.model.User;
 import com.ga.store.repository.EmailVerificationTokenRepository;
@@ -50,7 +51,9 @@ public class EmailVerificationService {
                                 ));
 
         if (verificationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Verification token has expired");
+            throw new VerificationTokenExpiredException(
+                    "Verification token has expired"
+            );
         }
 
         User user = verificationToken.getUser();
