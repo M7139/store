@@ -32,23 +32,25 @@ public class CategoryService {
     }
 
     public Optional<Category> getCategoryByName(String name) {
-        return categoryRepository.findByName(name);
+        return categoryRepository.findByNameIgnoreCase(name.trim());
     }
 
     public boolean categoryExists(String name) {
-        return categoryRepository.existsByName(name);
+        return categoryRepository.existsByNameIgnoreCase(name.trim());
     }
 
     public Category createCategory(CategoryRequest request) {
 
-        if (categoryRepository.existsByName(request.getName())) {
+        String categoryName = request.getName().trim();
+
+        if (categoryRepository.existsByNameIgnoreCase(categoryName)) {
             throw new InformationExistsException(
                     "Category with this name already exists"
             );
         }
 
         Category category = new Category(
-                request.getName(),
+                categoryName,
                 request.getDescription()
         );
 
