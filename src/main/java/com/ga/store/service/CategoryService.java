@@ -1,5 +1,7 @@
 package com.ga.store.service;
 
+import com.ga.store.dto.CategoryRequest;
+import com.ga.store.exception.InformationExistsException;
 import com.ga.store.exception.InformationNotFoundException;
 import com.ga.store.model.Category;
 import com.ga.store.repository.CategoryRepository;
@@ -35,5 +37,21 @@ public class CategoryService {
 
     public boolean categoryExists(String name) {
         return categoryRepository.existsByName(name);
+    }
+
+    public Category createCategory(CategoryRequest request) {
+
+        if (categoryRepository.existsByName(request.getName())) {
+            throw new InformationExistsException(
+                    "Category with this name already exists"
+            );
+        }
+
+        Category category = new Category(
+                request.getName(),
+                request.getDescription()
+        );
+
+        return categoryRepository.save(category);
     }
 }
