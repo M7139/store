@@ -3,6 +3,7 @@ package com.ga.store.service;
 import com.ga.store.dto.LoginRequest;
 import com.ga.store.dto.RegisterRequest;
 import com.ga.store.enums.UserStatus;
+import com.ga.store.exception.EmailNotVerifiedException;
 import com.ga.store.exception.InactiveAccountException;
 import com.ga.store.exception.InformationExistsException;
 import com.ga.store.exception.InvalidCredentialsException;
@@ -81,6 +82,10 @@ public class UserService {
 
         if (user.getStatus() == UserStatus.INACTIVE) {
             throw new InactiveAccountException("Account is inactive");
+        }
+
+        if (!user.isVerified()) {
+            throw new EmailNotVerifiedException("Email is not verified");
         }
 
         return user;
