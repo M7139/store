@@ -54,4 +54,20 @@ public class CategoryController {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CategoryResponse> getCategoryById(
+            @PathVariable Long id) {
+
+        Category category = categoryService.getCategoryById(id);
+
+        CategoryResponse response = new CategoryResponse(
+                category.getId(),
+                category.getName(),
+                category.getDescription(),
+                category.isActive()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }
