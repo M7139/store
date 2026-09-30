@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryController {
@@ -35,5 +37,21 @@ public class CategoryController {
         );
 
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<CategoryResponse>> getAllCategories() {
+
+        List<CategoryResponse> response = categoryService.getAllCategories()
+                .stream()
+                .map(category -> new CategoryResponse(
+                        category.getId(),
+                        category.getName(),
+                        category.getDescription(),
+                        category.isActive()
+                ))
+                .toList();
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
