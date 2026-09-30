@@ -85,14 +85,4 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
-
-    @ExceptionHandler(InformationNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleInformationNotFoundException(
-            InformationNotFoundException exception) {
-
-        Map<String, String> response = new HashMap<>();
-        response.put("message", exception.getMessage());
-
-        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
-    }
 }
