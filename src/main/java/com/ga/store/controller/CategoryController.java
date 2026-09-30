@@ -88,4 +88,17 @@ public class CategoryController {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> deleteCategory(
+            @PathVariable Long id) {
+
+        categoryService.deleteCategory(id);
+
+        return new ResponseEntity<>(
+                "Category deleted successfully",
+                HttpStatus.OK
+        );
+    }
 }

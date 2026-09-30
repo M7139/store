@@ -79,4 +79,11 @@ public class CategoryService {
 
         return categoryRepository.save(category);
     }
+
+    public void deleteCategory(Long id) {
+
+        Category category = getCategoryById(id);
+
+        categoryRepository.delete(category);
+    }
 }
