@@ -1,5 +1,6 @@
 package com.ga.store.controller;
 
+import com.ga.store.dto.ForgotPasswordRequest;
 import com.ga.store.dto.LoginRequest;
 import com.ga.store.dto.LoginResponse;
 import com.ga.store.dto.RegisterRequest;
@@ -7,6 +8,7 @@ import com.ga.store.dto.UserResponse;
 import com.ga.store.model.User;
 import com.ga.store.security.JwtUtils;
 import com.ga.store.service.EmailVerificationService;
+import com.ga.store.service.PasswordResetService;
 import com.ga.store.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -22,15 +24,18 @@ public class AuthController {
     private final UserService userService;
     private final JwtUtils jwtUtils;
     private final EmailVerificationService emailVerificationService;
+    private final PasswordResetService passwordResetService;
 
     public AuthController(
             UserService userService,
             JwtUtils jwtUtils,
-            EmailVerificationService emailVerificationService) {
+            EmailVerificationService emailVerificationService,
+            PasswordResetService passwordResetService) {
 
         this.userService = userService;
         this.jwtUtils = jwtUtils;
         this.emailVerificationService = emailVerificationService;
+        this.passwordResetService = passwordResetService;
     }
 
     @PostMapping("/register")
@@ -85,6 +90,18 @@ public class AuthController {
 
         return new ResponseEntity<>(
                 "Email verified successfully",
+                HttpStatus.OK
+        );
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+
+        passwordResetService.requestPasswordReset(request.getEmail());
+
+        return new ResponseEntity<>(
+                "Password reset request created",
                 HttpStatus.OK
         );
     }
