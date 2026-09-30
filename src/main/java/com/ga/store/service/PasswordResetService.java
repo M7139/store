@@ -42,6 +42,9 @@ public class PasswordResetService {
 
     public PasswordResetToken createPasswordResetToken(User user) {
 
+        passwordResetTokenRepository.findByUser(user)
+                .ifPresent(passwordResetTokenRepository::delete);
+
         String token = UUID.randomUUID().toString();
 
         LocalDateTime expiresAt = LocalDateTime.now().plusHours(1);
