@@ -19,10 +19,16 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailVerificationService emailVerificationService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            EmailVerificationService emailVerificationService) {
+
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailVerificationService = emailVerificationService;
     }
 
     public List<User> getAllUsers() {
@@ -56,7 +62,11 @@ public class UserService {
                 hashedPassword
         );
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        emailVerificationService.createVerificationToken(savedUser);
+
+        return savedUser;
     }
 
     public User loginUser(LoginRequest request) {
