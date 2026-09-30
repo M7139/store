@@ -70,4 +70,22 @@ public class CategoryController {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<CategoryResponse> updateCategory(
+            @PathVariable Long id,
+            @Valid @RequestBody CategoryRequest request) {
+
+        Category category = categoryService.updateCategory(id, request);
+
+        CategoryResponse response = new CategoryResponse(
+                category.getId(),
+                category.getName(),
+                category.getDescription(),
+                category.isActive()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }

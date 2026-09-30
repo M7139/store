@@ -56,4 +56,27 @@ public class CategoryService {
 
         return categoryRepository.save(category);
     }
+
+    public Category updateCategory(Long id, CategoryRequest request) {
+
+        Category category = getCategoryById(id);
+
+        String categoryName = request.getName().trim();
+
+        Optional<Category> existingCategory =
+                categoryRepository.findByNameIgnoreCase(categoryName);
+
+        if (existingCategory.isPresent()
+                && !existingCategory.get().getId().equals(id)) {
+
+            throw new InformationExistsException(
+                    "Category with this name already exists"
+            );
+        }
+
+        category.setName(categoryName);
+        category.setDescription(request.getDescription());
+
+        return categoryRepository.save(category);
+    }
 }
