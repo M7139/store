@@ -16,13 +16,16 @@ public class EmailVerificationService {
 
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     public EmailVerificationService(
             EmailVerificationTokenRepository emailVerificationTokenRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            EmailService emailService) {
 
         this.emailVerificationTokenRepository = emailVerificationTokenRepository;
         this.userRepository = userRepository;
+        this.emailService = emailService;
     }
 
     public EmailVerificationToken createVerificationToken(User user) {
@@ -38,7 +41,15 @@ public class EmailVerificationService {
                         expiresAt
                 );
 
-        return emailVerificationTokenRepository.save(verificationToken);
+        EmailVerificationToken savedToken =
+                emailVerificationTokenRepository.save(verificationToken);
+
+        emailService.sendVerificationEmail(
+                user.getEmail(),
+                savedToken.getToken()
+        );
+
+        return savedToken;
     }
 
     public void verifyEmail(String token) {
