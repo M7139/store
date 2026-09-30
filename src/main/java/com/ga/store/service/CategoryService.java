@@ -1,5 +1,6 @@
 package com.ga.store.service;
 
+import com.ga.store.exception.InformationNotFoundException;
 import com.ga.store.model.Category;
 import com.ga.store.repository.CategoryRepository;
 import org.springframework.stereotype.Service;
@@ -20,8 +21,12 @@ public class CategoryService {
         return categoryRepository.findAll();
     }
 
-    public Optional<Category> getCategoryById(Long id) {
-        return categoryRepository.findById(id);
+    public Category getCategoryById(Long id) {
+        return categoryRepository.findById(id)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "Category with id " + id + " not found"
+                        ));
     }
 
     public Optional<Category> getCategoryByName(String name) {
