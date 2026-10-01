@@ -16,13 +16,16 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryService categoryService;
+    private final ProductImageService productImageService;
 
     public ProductService(
             ProductRepository productRepository,
-            CategoryService categoryService) {
+            CategoryService categoryService,
+            ProductImageService productImageService) {
 
         this.productRepository = productRepository;
         this.categoryService = categoryService;
+        this.productImageService = productImageService;
     }
 
     public List<Product> getAllProducts() {
@@ -124,6 +127,8 @@ public class ProductService {
     public void deleteProduct(Long id) {
 
         Product product = getProductById(id);
+
+        productImageService.deleteImagesByProductId(id);
 
         productRepository.delete(product);
     }
