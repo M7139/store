@@ -82,4 +82,26 @@ public class ProductController {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<List<ProductResponse>> getProductsByCategory(
+            @PathVariable Long categoryId) {
+
+        List<ProductResponse> response =
+                productService.getProductsByCategoryId(categoryId)
+                        .stream()
+                        .map(product -> new ProductResponse(
+                                product.getId(),
+                                product.getName(),
+                                product.getDescription(),
+                                product.getPrice(),
+                                product.getStockQuantity(),
+                                product.isActive(),
+                                product.getCategory().getId(),
+                                product.getCategory().getName()
+                        ))
+                        .toList();
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }
