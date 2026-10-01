@@ -77,10 +77,32 @@ public class ProductImageService {
         ProductImage productImage =
                 getProductImageById(id);
 
+        Long productId =
+                productImage.getProduct().getId();
+
+        boolean wasPrimary =
+                productImage.isPrimaryImage();
+
         imageStorageService.deleteImage(
                 productImage.getImageUrl()
         );
 
         productImageRepository.delete(productImage);
+
+        if (wasPrimary) {
+
+            List<ProductImage> remainingImages =
+                    productImageRepository.findByProductId(productId);
+
+            if (!remainingImages.isEmpty()) {
+
+                ProductImage newPrimaryImage =
+                        remainingImages.get(0);
+
+                newPrimaryImage.setPrimaryImage(true);
+
+                productImageRepository.save(newPrimaryImage);
+            }
+        }
     }
 }
