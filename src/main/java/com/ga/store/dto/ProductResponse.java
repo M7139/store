@@ -12,6 +12,7 @@ public class ProductResponse {
     private boolean active;
     private Long categoryId;
     private String categoryName;
+    private String primaryImageUrl;
 
     public ProductResponse() {
     }
@@ -34,6 +35,28 @@ public class ProductResponse {
         this.active = active;
         this.categoryId = categoryId;
         this.categoryName = categoryName;
+    }
+
+    public ProductResponse(
+            Long id,
+            String name,
+            String description,
+            BigDecimal price,
+            int stockQuantity,
+            boolean active,
+            Long categoryId,
+            String categoryName,
+            String primaryImageUrl) {
+
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.stockQuantity = stockQuantity;
+        this.active = active;
+        this.categoryId = categoryId;
+        this.categoryName = categoryName;
+        this.primaryImageUrl = primaryImageUrl;
     }
 
     public Long getId() {
@@ -98,5 +121,13 @@ public class ProductResponse {
 
     public void setCategoryName(String categoryName) {
         this.categoryName = categoryName;
+    }
+
+    public String getPrimaryImageUrl() {
+        return primaryImageUrl;
+    }
+
+    public void setPrimaryImageUrl(String primaryImageUrl) {
+        this.primaryImageUrl = primaryImageUrl;
     }
 }

@@ -52,6 +52,14 @@ public class ProductImageService {
                         ));
     }
 
+    public String getPrimaryImageUrl(Long productId) {
+
+        return productImageRepository
+                .findByProductIdAndPrimaryImageTrue(productId)
+                .map(ProductImage::getImageUrl)
+                .orElse(null);
+    }
+
     public ProductImage uploadProductImage(
             MultipartFile file,
             Long productId,
