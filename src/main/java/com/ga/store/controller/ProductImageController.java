@@ -59,7 +59,8 @@ public class ProductImageController {
             @PathVariable Long productId) {
 
         List<ProductImageResponse> response =
-                productImageService.getImagesByProductId(productId)
+                productImageService
+                        .getActiveProductImagesByProductId(productId)
                         .stream()
                         .map(productImage -> new ProductImageResponse(
                                 productImage.getId(),
