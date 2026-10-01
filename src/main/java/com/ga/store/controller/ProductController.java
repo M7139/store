@@ -88,7 +88,7 @@ public class ProductController {
     public ResponseEntity<ProductResponse> getProductById(
             @PathVariable Long id) {
 
-        Product product = productService.getProductById(id);
+        Product product = productService.getActiveProductById(id);
 
         ProductResponse response = new ProductResponse(
                 product.getId(),
