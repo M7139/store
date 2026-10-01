@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
@@ -39,5 +41,25 @@ public class ProductController {
         );
 
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ProductResponse>> getAllProducts() {
+
+        List<ProductResponse> response = productService.getAllProducts()
+                .stream()
+                .map(product -> new ProductResponse(
+                        product.getId(),
+                        product.getName(),
+                        product.getDescription(),
+                        product.getPrice(),
+                        product.getStockQuantity(),
+                        product.isActive(),
+                        product.getCategory().getId(),
+                        product.getCategory().getName()
+                ))
+                .toList();
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
