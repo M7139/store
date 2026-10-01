@@ -132,4 +132,19 @@ public class ProductImageService {
             }
         }
     }
+
+    public void deleteImagesByProductId(Long productId) {
+
+        List<ProductImage> productImages =
+                productImageRepository.findByProductId(productId);
+
+        for (ProductImage productImage : productImages) {
+
+            imageStorageService.deleteImage(
+                    productImage.getImageUrl()
+            );
+
+            productImageRepository.delete(productImage);
+        }
+    }
 }
