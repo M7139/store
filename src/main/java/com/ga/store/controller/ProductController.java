@@ -139,4 +139,26 @@ public class ProductController {
                 HttpStatus.OK
         );
     }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ProductResponse> updateProductStatus(
+            @PathVariable Long id,
+            @RequestParam boolean active) {
+
+        Product product = productService.updateProductStatus(id, active);
+
+        ProductResponse response = new ProductResponse(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                product.getStockQuantity(),
+                product.isActive(),
+                product.getCategory().getId(),
+                product.getCategory().getName()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }

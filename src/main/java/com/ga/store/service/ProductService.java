@@ -108,4 +108,13 @@ public class ProductService {
 
         productRepository.delete(product);
     }
+
+    public Product updateProductStatus(Long id, boolean active) {
+
+        Product product = getProductById(id);
+
+        product.setActive(active);
+
+        return productRepository.save(product);
+    }
 }
