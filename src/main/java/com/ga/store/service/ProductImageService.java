@@ -1,6 +1,5 @@
 package com.ga.store.service;
 
-import com.ga.store.dto.ProductImageRequest;
 import com.ga.store.exception.InformationNotFoundException;
 import com.ga.store.model.Product;
 import com.ga.store.model.ProductImage;
@@ -41,30 +40,6 @@ public class ProductImageService {
                         new InformationNotFoundException(
                                 "Product image with id " + id + " not found"
                         ));
-    }
-
-    public ProductImage createProductImage(ProductImageRequest request) {
-
-        Product product =
-                productService.getProductById(request.getProductId());
-
-        if (request.isPrimaryImage()) {
-
-            productImageRepository
-                    .findByProductIdAndPrimaryImageTrue(product.getId())
-                    .ifPresent(existingPrimaryImage -> {
-                        existingPrimaryImage.setPrimaryImage(false);
-                        productImageRepository.save(existingPrimaryImage);
-                    });
-        }
-
-        ProductImage productImage = new ProductImage(
-                request.getImageUrl().trim(),
-                request.isPrimaryImage(),
-                product
-        );
-
-        return productImageRepository.save(productImage);
     }
 
     public ProductImage uploadProductImage(
