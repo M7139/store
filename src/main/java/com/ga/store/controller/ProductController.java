@@ -3,6 +3,7 @@ package com.ga.store.controller;
 import com.ga.store.dto.ProductRequest;
 import com.ga.store.dto.ProductResponse;
 import com.ga.store.model.Product;
+import com.ga.store.service.ProductImageService;
 import com.ga.store.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -17,9 +18,14 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductImageService productImageService;
 
-    public ProductController(ProductService productService) {
+    public ProductController(
+            ProductService productService,
+            ProductImageService productImageService) {
+
         this.productService = productService;
+        this.productImageService = productImageService;
     }
 
     @PostMapping
@@ -29,16 +35,7 @@ public class ProductController {
 
         Product product = productService.createProduct(request);
 
-        ProductResponse response = new ProductResponse(
-                product.getId(),
-                product.getName(),
-                product.getDescription(),
-                product.getPrice(),
-                product.getStockQuantity(),
-                product.isActive(),
-                product.getCategory().getId(),
-                product.getCategory().getName()
-        );
+        ProductResponse response = createProductResponse(product);
 
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -48,16 +45,7 @@ public class ProductController {
 
         List<ProductResponse> response = productService.getActiveProducts()
                 .stream()
-                .map(product -> new ProductResponse(
-                        product.getId(),
-                        product.getName(),
-                        product.getDescription(),
-                        product.getPrice(),
-                        product.getStockQuantity(),
-                        product.isActive(),
-                        product.getCategory().getId(),
-                        product.getCategory().getName()
-                ))
+                .map(this::createProductResponse)
                 .toList();
 
         return new ResponseEntity<>(response, HttpStatus.OK);
@@ -69,16 +57,7 @@ public class ProductController {
 
         List<ProductResponse> response = productService.getAllProducts()
                 .stream()
-                .map(product -> new ProductResponse(
-                        product.getId(),
-                        product.getName(),
-                        product.getDescription(),
-                        product.getPrice(),
-                        product.getStockQuantity(),
-                        product.isActive(),
-                        product.getCategory().getId(),
-                        product.getCategory().getName()
-                ))
+                .map(this::createProductResponse)
                 .toList();
 
         return new ResponseEntity<>(response, HttpStatus.OK);
@@ -91,16 +70,7 @@ public class ProductController {
 
         Product product = productService.getProductById(id);
 
-        ProductResponse response = new ProductResponse(
-                product.getId(),
-                product.getName(),
-                product.getDescription(),
-                product.getPrice(),
-                product.getStockQuantity(),
-                product.isActive(),
-                product.getCategory().getId(),
-                product.getCategory().getName()
-        );
+        ProductResponse response = createProductResponse(product);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -111,16 +81,7 @@ public class ProductController {
 
         Product product = productService.getActiveProductById(id);
 
-        ProductResponse response = new ProductResponse(
-                product.getId(),
-                product.getName(),
-                product.getDescription(),
-                product.getPrice(),
-                product.getStockQuantity(),
-                product.isActive(),
-                product.getCategory().getId(),
-                product.getCategory().getName()
-        );
+        ProductResponse response = createProductResponse(product);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -132,16 +93,7 @@ public class ProductController {
         List<ProductResponse> response =
                 productService.getActiveProductsByCategoryId(categoryId)
                         .stream()
-                        .map(product -> new ProductResponse(
-                                product.getId(),
-                                product.getName(),
-                                product.getDescription(),
-                                product.getPrice(),
-                                product.getStockQuantity(),
-                                product.isActive(),
-                                product.getCategory().getId(),
-                                product.getCategory().getName()
-                        ))
+                        .map(this::createProductResponse)
                         .toList();
 
         return new ResponseEntity<>(response, HttpStatus.OK);
@@ -155,16 +107,7 @@ public class ProductController {
 
         Product product = productService.updateProduct(id, request);
 
-        ProductResponse response = new ProductResponse(
-                product.getId(),
-                product.getName(),
-                product.getDescription(),
-                product.getPrice(),
-                product.getStockQuantity(),
-                product.isActive(),
-                product.getCategory().getId(),
-                product.getCategory().getName()
-        );
+        ProductResponse response = createProductResponse(product);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -188,9 +131,20 @@ public class ProductController {
             @PathVariable Long id,
             @RequestParam boolean active) {
 
-        Product product = productService.updateProductStatus(id, active);
+        Product product =
+                productService.updateProductStatus(id, active);
 
-        ProductResponse response = new ProductResponse(
+        ProductResponse response = createProductResponse(product);
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    private ProductResponse createProductResponse(Product product) {
+
+        String primaryImageUrl =
+                productImageService.getPrimaryImageUrl(product.getId());
+
+        return new ProductResponse(
                 product.getId(),
                 product.getName(),
                 product.getDescription(),
@@ -198,9 +152,8 @@ public class ProductController {
                 product.getStockQuantity(),
                 product.isActive(),
                 product.getCategory().getId(),
-                product.getCategory().getName()
+                product.getCategory().getName(),
+                primaryImageUrl
         );
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
