@@ -70,4 +70,21 @@ public class ImageStorageService {
 
         return "/uploads/products/" + fileName;
     }
+
+    public void deleteImage(String imageUrl) {
+
+        String fileName =
+                Paths.get(imageUrl).getFileName().toString();
+
+        Path filePath =
+                uploadDirectory.resolve(fileName);
+
+        try {
+            Files.deleteIfExists(filePath);
+        } catch (IOException e) {
+            throw new RuntimeException(
+                    "Could not delete image file"
+            );
+        }
+    }
 }

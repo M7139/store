@@ -74,4 +74,17 @@ public class ProductImageController {
                 HttpStatus.OK
         );
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> deleteProductImage(
+            @PathVariable Long id) {
+
+        productImageService.deleteProductImage(id);
+
+        return new ResponseEntity<>(
+                "Product image deleted successfully",
+                HttpStatus.OK
+        );
+    }
 }

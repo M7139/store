@@ -71,4 +71,16 @@ public class ProductImageService {
 
         return productImageRepository.save(productImage);
     }
+
+    public void deleteProductImage(Long id) {
+
+        ProductImage productImage =
+                getProductImageById(id);
+
+        imageStorageService.deleteImage(
+                productImage.getImageUrl()
+        );
+
+        productImageRepository.delete(productImage);
+    }
 }
