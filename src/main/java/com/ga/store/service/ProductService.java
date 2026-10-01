@@ -29,6 +29,10 @@ public class ProductService {
         return productRepository.findAll();
     }
 
+    public List<Product> getActiveProducts() {
+        return productRepository.findByActiveTrue();
+    }
+
     public Product getProductById(Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() ->
@@ -43,6 +47,13 @@ public class ProductService {
 
     public List<Product> getProductsByCategoryId(Long categoryId) {
         return productRepository.findByCategoryId(categoryId);
+    }
+
+    public List<Product> getActiveProductsByCategoryId(Long categoryId) {
+
+        categoryService.getCategoryById(categoryId);
+
+        return productRepository.findByCategoryIdAndActiveTrue(categoryId);
     }
 
     public boolean productExists(String name) {
