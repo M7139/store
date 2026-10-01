@@ -44,6 +44,16 @@ public class ProductImageService {
         Product product =
                 productService.getProductById(request.getProductId());
 
+        if (request.isPrimaryImage()) {
+
+            productImageRepository
+                    .findByProductIdAndPrimaryImageTrue(product.getId())
+                    .ifPresent(existingPrimaryImage -> {
+                        existingPrimaryImage.setPrimaryImage(false);
+                        productImageRepository.save(existingPrimaryImage);
+                    });
+        }
+
         ProductImage productImage = new ProductImage(
                 request.getImageUrl().trim(),
                 request.isPrimaryImage(),
