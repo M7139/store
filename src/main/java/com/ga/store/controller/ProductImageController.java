@@ -76,6 +76,29 @@ public class ProductImageController {
         );
     }
 
+    @GetMapping("/admin/product/{productId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<ProductImageResponse>> getImagesByProductForAdmin(
+            @PathVariable Long productId) {
+
+        List<ProductImageResponse> response =
+                productImageService
+                        .getImagesByProductId(productId)
+                        .stream()
+                        .map(productImage -> new ProductImageResponse(
+                                productImage.getId(),
+                                productImage.getImageUrl(),
+                                productImage.isPrimaryImage(),
+                                productImage.getProduct().getId()
+                        ))
+                        .toList();
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.OK
+        );
+    }
+
     @PatchMapping("/{id}/primary")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProductImageResponse> setPrimaryImage(
