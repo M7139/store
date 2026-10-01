@@ -5,6 +5,7 @@ import com.ga.store.exception.InformationExistsException;
 import com.ga.store.exception.InformationNotFoundException;
 import com.ga.store.model.Category;
 import com.ga.store.repository.CategoryRepository;
+import com.ga.store.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,9 +15,14 @@ import java.util.Optional;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
 
-    public CategoryService(CategoryRepository categoryRepository) {
+    public CategoryService(
+            CategoryRepository categoryRepository,
+            ProductRepository productRepository) {
+
         this.categoryRepository = categoryRepository;
+        this.productRepository = productRepository;
     }
 
     public List<Category> getAllCategories() {
@@ -83,6 +89,12 @@ public class CategoryService {
     public void deleteCategory(Long id) {
 
         Category category = getCategoryById(id);
+
+        if (productRepository.existsByCategoryId(id)) {
+            throw new InformationExistsException(
+                    "Category cannot be deleted because it contains products"
+            );
+        }
 
         categoryRepository.delete(category);
     }
