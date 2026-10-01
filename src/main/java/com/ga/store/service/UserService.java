@@ -1,11 +1,12 @@
 package com.ga.store.service;
 
+import com.ga.store.dto.ChangePasswordRequest;
 import com.ga.store.dto.LoginRequest;
 import com.ga.store.dto.RegisterRequest;
-import com.ga.store.enums.UserStatus;
 import com.ga.store.exception.EmailNotVerifiedException;
 import com.ga.store.exception.InactiveAccountException;
 import com.ga.store.exception.InformationExistsException;
+import com.ga.store.exception.InformationNotFoundException;
 import com.ga.store.exception.InvalidCredentialsException;
 import com.ga.store.model.User;
 import com.ga.store.repository.UserRepository;
@@ -13,7 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserService {
@@ -36,12 +36,20 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public Optional<User> getUserById(Long id) {
-        return userRepository.findById(id);
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "User with id " + id + " not found"
+                        ));
     }
 
-    public Optional<User> getUserByEmail(String email) {
-        return userRepository.findByEmail(email);
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "User with this email not found"
+                        ));
     }
 
     public boolean emailExists(String email) {
@@ -51,21 +59,26 @@ public class UserService {
     public User registerUser(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new InformationExistsException("User with this email already exists");
+            throw new InformationExistsException(
+                    "User with this email already exists"
+            );
         }
 
-        String hashedPassword = passwordEncoder.encode(request.getPassword());
+        String passwordHash =
+                passwordEncoder.encode(request.getPassword());
 
         User user = new User(
                 request.getFirstName(),
                 request.getLastName(),
                 request.getEmail(),
-                hashedPassword
+                passwordHash
         );
 
-        User savedUser = userRepository.save(user);
+        User savedUser =
+                userRepository.save(user);
 
-        emailVerificationService.createVerificationToken(savedUser);
+        emailVerificationService
+                .createVerificationToken(savedUser);
 
         return savedUser;
     }
@@ -74,20 +87,54 @@ public class UserService {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() ->
-                        new InvalidCredentialsException("Invalid email or password"));
+                        new InvalidCredentialsException(
+                                "Invalid email or password"
+                        ));
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new InvalidCredentialsException("Invalid email or password");
+        if (!passwordEncoder.matches(
+                request.getPassword(),
+                user.getPasswordHash())) {
+
+            throw new InvalidCredentialsException(
+                    "Invalid email or password"
+            );
         }
 
-        if (user.getStatus() == UserStatus.INACTIVE) {
-            throw new InactiveAccountException("Account is inactive");
+        if (user.getStatus().name().equals("INACTIVE")) {
+            throw new InactiveAccountException(
+                    "Account is inactive"
+            );
         }
 
         if (!user.isVerified()) {
-            throw new EmailNotVerifiedException("Email is not verified");
+            throw new EmailNotVerifiedException(
+                    "Email is not verified"
+            );
         }
 
         return user;
+    }
+
+    public void changePassword(
+            String email,
+            ChangePasswordRequest request) {
+
+        User user = getUserByEmail(email);
+
+        if (!passwordEncoder.matches(
+                request.getCurrentPassword(),
+                user.getPasswordHash())) {
+
+            throw new InvalidCredentialsException(
+                    "Current password is incorrect"
+            );
+        }
+
+        String newPasswordHash =
+                passwordEncoder.encode(request.getNewPassword());
+
+        user.setPasswordHash(newPasswordHash);
+
+        userRepository.save(user);
     }
 }
