@@ -34,9 +34,26 @@ public class ProductImageService {
         return productImageRepository.findByProductId(productId);
     }
 
+    public List<ProductImage> getActiveProductImagesByProductId(
+            Long productId) {
+
+        getActiveProductById(productId);
+
+        return productImageRepository.findByProductId(productId);
+    }
+
     private Product getProductById(Long id) {
 
         return productRepository.findById(id)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "Product with id " + id + " not found"
+                        ));
+    }
+
+    private Product getActiveProductById(Long id) {
+
+        return productRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() ->
                         new InformationNotFoundException(
                                 "Product with id " + id + " not found"
