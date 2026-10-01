@@ -53,6 +53,13 @@ public class ProductImageService {
         String imageUrl =
                 imageStorageService.saveImage(file);
 
+        List<ProductImage> existingImages =
+                productImageRepository.findByProductId(productId);
+
+        if (existingImages.isEmpty()) {
+            primaryImage = true;
+        }
+
         if (primaryImage) {
 
             productImageRepository
