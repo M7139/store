@@ -4,6 +4,7 @@ import com.ga.store.exception.InformationNotFoundException;
 import com.ga.store.model.Product;
 import com.ga.store.model.ProductImage;
 import com.ga.store.repository.ProductImageRepository;
+import com.ga.store.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,24 +14,33 @@ import java.util.List;
 public class ProductImageService {
 
     private final ProductImageRepository productImageRepository;
-    private final ProductService productService;
+    private final ProductRepository productRepository;
     private final ImageStorageService imageStorageService;
 
     public ProductImageService(
             ProductImageRepository productImageRepository,
-            ProductService productService,
+            ProductRepository productRepository,
             ImageStorageService imageStorageService) {
 
         this.productImageRepository = productImageRepository;
-        this.productService = productService;
+        this.productRepository = productRepository;
         this.imageStorageService = imageStorageService;
     }
 
     public List<ProductImage> getImagesByProductId(Long productId) {
 
-        productService.getProductById(productId);
+        getProductById(productId);
 
         return productImageRepository.findByProductId(productId);
+    }
+
+    private Product getProductById(Long id) {
+
+        return productRepository.findById(id)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "Product with id " + id + " not found"
+                        ));
     }
 
     public ProductImage getProductImageById(Long id) {
@@ -48,7 +58,7 @@ public class ProductImageService {
             boolean primaryImage) {
 
         Product product =
-                productService.getProductById(productId);
+                getProductById(productId);
 
         String imageUrl =
                 imageStorageService.saveImage(file);
