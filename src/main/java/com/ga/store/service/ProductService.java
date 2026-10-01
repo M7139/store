@@ -41,6 +41,14 @@ public class ProductService {
                         ));
     }
 
+    public Product getActiveProductById(Long id) {
+        return productRepository.findByIdAndActiveTrue(id)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "Product with id " + id + " not found"
+                        ));
+    }
+
     public Optional<Product> getProductByName(String name) {
         return productRepository.findByNameIgnoreCase(name.trim());
     }
