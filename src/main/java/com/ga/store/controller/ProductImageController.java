@@ -75,6 +75,27 @@ public class ProductImageController {
         );
     }
 
+    @PatchMapping("/{id}/primary")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ProductImageResponse> setPrimaryImage(
+            @PathVariable Long id) {
+
+        ProductImage productImage =
+                productImageService.setPrimaryImage(id);
+
+        ProductImageResponse response = new ProductImageResponse(
+                productImage.getId(),
+                productImage.getImageUrl(),
+                productImage.isPrimaryImage(),
+                productImage.getProduct().getId()
+        );
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.OK
+        );
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteProductImage(

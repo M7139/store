@@ -72,6 +72,26 @@ public class ProductImageService {
         return productImageRepository.save(productImage);
     }
 
+    public ProductImage setPrimaryImage(Long id) {
+
+        ProductImage productImage =
+                getProductImageById(id);
+
+        Long productId =
+                productImage.getProduct().getId();
+
+        productImageRepository
+                .findByProductIdAndPrimaryImageTrue(productId)
+                .ifPresent(existingPrimaryImage -> {
+                    existingPrimaryImage.setPrimaryImage(false);
+                    productImageRepository.save(existingPrimaryImage);
+                });
+
+        productImage.setPrimaryImage(true);
+
+        return productImageRepository.save(productImage);
+    }
+
     public void deleteProductImage(Long id) {
 
         ProductImage productImage =
