@@ -1,6 +1,9 @@
 package com.ga.store.service;
 
+import com.ga.store.dto.ProductRequest;
+import com.ga.store.exception.InformationExistsException;
 import com.ga.store.exception.InformationNotFoundException;
+import com.ga.store.model.Category;
 import com.ga.store.model.Product;
 import com.ga.store.repository.ProductRepository;
 import org.springframework.stereotype.Service;
@@ -12,9 +15,14 @@ import java.util.Optional;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final CategoryService categoryService;
 
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(
+            ProductRepository productRepository,
+            CategoryService categoryService) {
+
         this.productRepository = productRepository;
+        this.categoryService = categoryService;
     }
 
     public List<Product> getAllProducts() {
@@ -39,5 +47,29 @@ public class ProductService {
 
     public boolean productExists(String name) {
         return productRepository.existsByNameIgnoreCase(name.trim());
+    }
+
+    public Product createProduct(ProductRequest request) {
+
+        String productName = request.getName().trim();
+
+        if (productRepository.existsByNameIgnoreCase(productName)) {
+            throw new InformationExistsException(
+                    "Product with this name already exists"
+            );
+        }
+
+        Category category =
+                categoryService.getCategoryById(request.getCategoryId());
+
+        Product product = new Product(
+                productName,
+                request.getDescription(),
+                request.getPrice(),
+                request.getStockQuantity(),
+                category
+        );
+
+        return productRepository.save(product);
     }
 }
