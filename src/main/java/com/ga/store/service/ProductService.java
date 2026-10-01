@@ -72,4 +72,33 @@ public class ProductService {
 
         return productRepository.save(product);
     }
+
+    public Product updateProduct(Long id, ProductRequest request) {
+
+        Product product = getProductById(id);
+
+        String productName = request.getName().trim();
+
+        Optional<Product> existingProduct =
+                productRepository.findByNameIgnoreCase(productName);
+
+        if (existingProduct.isPresent()
+                && !existingProduct.get().getId().equals(id)) {
+
+            throw new InformationExistsException(
+                    "Product with this name already exists"
+            );
+        }
+
+        Category category =
+                categoryService.getCategoryById(request.getCategoryId());
+
+        product.setName(productName);
+        product.setDescription(request.getDescription());
+        product.setPrice(request.getPrice());
+        product.setStockQuantity(request.getStockQuantity());
+        product.setCategory(category);
+
+        return productRepository.save(product);
+    }
 }

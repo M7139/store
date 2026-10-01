@@ -104,4 +104,26 @@ public class ProductController {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ProductResponse> updateProduct(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductRequest request) {
+
+        Product product = productService.updateProduct(id, request);
+
+        ProductResponse response = new ProductResponse(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                product.getStockQuantity(),
+                product.isActive(),
+                product.getCategory().getId(),
+                product.getCategory().getName()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }
