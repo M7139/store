@@ -46,7 +46,7 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<List<ProductResponse>> getAllProducts() {
 
-        List<ProductResponse> response = productService.getAllProducts()
+        List<ProductResponse> response = productService.getActiveProducts()
                 .stream()
                 .map(product -> new ProductResponse(
                         product.getId(),
@@ -88,7 +88,7 @@ public class ProductController {
             @PathVariable Long categoryId) {
 
         List<ProductResponse> response =
-                productService.getProductsByCategoryId(categoryId)
+                productService.getActiveProductsByCategoryId(categoryId)
                         .stream()
                         .map(product -> new ProductResponse(
                                 product.getId(),
