@@ -95,4 +95,11 @@ public class AddressService {
 
         return addressRepository.save(address);
     }
+
+    public void deleteAddress(String email) {
+
+        Address address = getAddressByUser(email);
+
+        addressRepository.delete(address);
+    }
 }
