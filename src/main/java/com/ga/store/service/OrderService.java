@@ -2,6 +2,7 @@ package com.ga.store.service;
 
 import com.ga.store.dto.OrderItemResponse;
 import com.ga.store.dto.OrderResponse;
+import com.ga.store.dto.OrderStatusRequest;
 import com.ga.store.enums.OrderStatus;
 import com.ga.store.exception.InformationExistsException;
 import com.ga.store.exception.InformationNotFoundException;
@@ -251,6 +252,70 @@ public class OrderService {
             );
         }
 
+        restoreOrderStock(order);
+
+        order.setStatus(OrderStatus.CANCELLED);
+
+        Order savedOrder =
+                orderRepository.save(order);
+
+        return createOrderResponse(savedOrder);
+    }
+
+    public List<OrderResponse> getAllOrders() {
+
+        return orderRepository.findAll()
+                .stream()
+                .map(this::createOrderResponse)
+                .toList();
+    }
+
+    @Transactional
+    public OrderResponse updateOrderStatus(
+            Long orderId,
+            OrderStatusRequest request) {
+
+        Order order =
+                orderRepository.findById(orderId)
+                        .orElseThrow(() ->
+                                new InformationNotFoundException(
+                                        "Order not found"
+                                ));
+
+        OrderStatus currentStatus =
+                order.getStatus();
+
+        OrderStatus newStatus =
+                request.getStatus();
+
+        if (currentStatus == OrderStatus.CANCELLED) {
+            throw new InformationExistsException(
+                    "Cancelled order status cannot be changed"
+            );
+        }
+
+        if (currentStatus == OrderStatus.DELIVERED) {
+            throw new InformationExistsException(
+                    "Delivered order status cannot be changed"
+            );
+        }
+
+        if (newStatus == OrderStatus.CANCELLED) {
+
+            restoreOrderStock(order);
+        }
+
+        order.setStatus(newStatus);
+
+        Order savedOrder =
+                orderRepository.save(order);
+
+        return createOrderResponse(savedOrder);
+    }
+
+    private void restoreOrderStock(
+            Order order) {
+
         List<OrderItem> orderItems =
                 orderItemRepository.findByOrder(order);
 
@@ -266,13 +331,6 @@ public class OrderService {
 
             productRepository.save(product);
         }
-
-        order.setStatus(OrderStatus.CANCELLED);
-
-        Order savedOrder =
-                orderRepository.save(order);
-
-        return createOrderResponse(savedOrder);
     }
 
     private OrderResponse createOrderResponse(
