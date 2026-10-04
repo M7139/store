@@ -1,6 +1,7 @@
 package com.ga.store.controller;
 
 import com.ga.store.dto.ChangePasswordRequest;
+import com.ga.store.dto.UpdateProfileRequest;
 import com.ga.store.dto.UserResponse;
 import com.ga.store.model.User;
 import com.ga.store.service.UserService;
@@ -28,16 +29,27 @@ public class UserController {
 
         User user = userService.getUserByEmail(email);
 
-        UserResponse response = new UserResponse(
-                user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getEmail(),
-                user.getRole(),
-                user.getStatus(),
-                user.isVerified(),
-                user.getProfilePictureUrl()
+        UserResponse response = createUserResponse(user);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.OK
         );
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<UserResponse> updateProfile(
+            Authentication authentication,
+            @Valid @RequestBody UpdateProfileRequest request) {
+
+        String email = authentication.getName();
+
+        User user = userService.updateProfile(
+                email,
+                request
+        );
+
+        UserResponse response = createUserResponse(user);
 
         return new ResponseEntity<>(
                 response,
@@ -57,6 +69,20 @@ public class UserController {
         return new ResponseEntity<>(
                 "Password changed successfully",
                 HttpStatus.OK
+        );
+    }
+
+    private UserResponse createUserResponse(User user) {
+
+        return new UserResponse(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getRole(),
+                user.getStatus(),
+                user.isVerified(),
+                user.getProfilePictureUrl()
         );
     }
 }

@@ -3,6 +3,7 @@ package com.ga.store.service;
 import com.ga.store.dto.ChangePasswordRequest;
 import com.ga.store.dto.LoginRequest;
 import com.ga.store.dto.RegisterRequest;
+import com.ga.store.dto.UpdateProfileRequest;
 import com.ga.store.exception.EmailNotVerifiedException;
 import com.ga.store.exception.InactiveAccountException;
 import com.ga.store.exception.InformationExistsException;
@@ -136,5 +137,17 @@ public class UserService {
         user.setPasswordHash(newPasswordHash);
 
         userRepository.save(user);
+    }
+
+    public User updateProfile(
+            String email,
+            UpdateProfileRequest request) {
+
+        User user = getUserByEmail(email);
+
+        user.setFirstName(request.getFirstName().trim());
+        user.setLastName(request.getLastName().trim());
+
+        return userRepository.save(user);
     }
 }
