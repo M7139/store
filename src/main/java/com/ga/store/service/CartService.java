@@ -196,6 +196,16 @@ public class CartService {
         cartItemRepository.delete(cartItem);
     }
 
+    public void clearCart(String email) {
+
+        Cart cart = getOrCreateCart(email);
+
+        List<CartItem> cartItems =
+                cartItemRepository.findByCart(cart);
+
+        cartItemRepository.deleteAll(cartItems);
+    }
+
     private CartItemResponse createCartItemResponse(
             CartItem cartItem) {
 
