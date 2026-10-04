@@ -1,6 +1,8 @@
 package com.ga.store.service;
 
 import com.ga.store.dto.CartItemRequest;
+import com.ga.store.dto.CartItemResponse;
+import com.ga.store.dto.CartResponse;
 import com.ga.store.exception.InformationExistsException;
 import com.ga.store.model.Cart;
 import com.ga.store.model.CartItem;
@@ -10,6 +12,8 @@ import com.ga.store.repository.CartItemRepository;
 import com.ga.store.repository.CartRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -19,17 +23,20 @@ public class CartService {
     private final CartItemRepository cartItemRepository;
     private final UserService userService;
     private final ProductService productService;
+    private final ProductImageService productImageService;
 
     public CartService(
             CartRepository cartRepository,
             CartItemRepository cartItemRepository,
             UserService userService,
-            ProductService productService) {
+            ProductService productService,
+            ProductImageService productImageService) {
 
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.userService = userService;
         this.productService = productService;
+        this.productImageService = productImageService;
     }
 
     public Cart getOrCreateCart(String email) {
@@ -93,5 +100,60 @@ public class CartService {
         );
 
         return cartItemRepository.save(cartItem);
+    }
+
+    public CartResponse getCart(String email) {
+
+        Cart cart = getOrCreateCart(email);
+
+        List<CartItem> cartItems =
+                cartItemRepository.findByCart(cart);
+
+        List<CartItemResponse> itemResponses =
+                cartItems.stream()
+                        .map(this::createCartItemResponse)
+                        .toList();
+
+        BigDecimal total = itemResponses.stream()
+                .map(CartItemResponse::getSubtotal)
+                .reduce(
+                        BigDecimal.ZERO,
+                        BigDecimal::add
+                );
+
+        return new CartResponse(
+                cart.getId(),
+                itemResponses,
+                total
+        );
+    }
+
+    private CartItemResponse createCartItemResponse(
+            CartItem cartItem) {
+
+        Product product = cartItem.getProduct();
+
+        BigDecimal subtotal =
+                product.getPrice()
+                        .multiply(
+                                BigDecimal.valueOf(
+                                        cartItem.getQuantity()
+                                )
+                        );
+
+        String primaryImageUrl =
+                productImageService.getPrimaryImageUrl(
+                        product.getId()
+                );
+
+        return new CartItemResponse(
+                cartItem.getId(),
+                product.getId(),
+                product.getName(),
+                product.getPrice(),
+                cartItem.getQuantity(),
+                subtotal,
+                primaryImageUrl
+        );
     }
 }
