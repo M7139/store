@@ -7,9 +7,11 @@ import com.ga.store.model.User;
 import com.ga.store.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/users")
@@ -27,9 +29,11 @@ public class UserController {
 
         String email = authentication.getName();
 
-        User user = userService.getUserByEmail(email);
+        User user =
+                userService.getUserByEmail(email);
 
-        UserResponse response = createUserResponse(user);
+        UserResponse response =
+                createUserResponse(user);
 
         return new ResponseEntity<>(
                 response,
@@ -49,7 +53,33 @@ public class UserController {
                 request
         );
 
-        UserResponse response = createUserResponse(user);
+        UserResponse response =
+                createUserResponse(user);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.OK
+        );
+    }
+
+    @PostMapping(
+            value = "/me/profile-picture",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<UserResponse> uploadProfilePicture(
+            Authentication authentication,
+            @RequestParam("file") MultipartFile file) {
+
+        String email = authentication.getName();
+
+        User user =
+                userService.uploadProfilePicture(
+                        email,
+                        file
+                );
+
+        UserResponse response =
+                createUserResponse(user);
 
         return new ResponseEntity<>(
                 response,
@@ -64,7 +94,10 @@ public class UserController {
 
         String email = authentication.getName();
 
-        userService.changePassword(email, request);
+        userService.changePassword(
+                email,
+                request
+        );
 
         return new ResponseEntity<>(
                 "Password changed successfully",
@@ -72,7 +105,8 @@ public class UserController {
         );
     }
 
-    private UserResponse createUserResponse(User user) {
+    private UserResponse createUserResponse(
+            User user) {
 
         return new UserResponse(
                 user.getId(),

@@ -12,13 +12,17 @@ import java.util.UUID;
 @Service
 public class ImageStorageService {
 
-    private final Path uploadDirectory =
+    private final Path productUploadDirectory =
             Paths.get("uploads/products");
+
+    private final Path profileUploadDirectory =
+            Paths.get("uploads/profiles");
 
     public ImageStorageService() {
 
         try {
-            Files.createDirectories(uploadDirectory);
+            Files.createDirectories(productUploadDirectory);
+            Files.createDirectories(profileUploadDirectory);
         } catch (IOException e) {
             throw new RuntimeException(
                     "Could not create image upload directory"
@@ -27,6 +31,27 @@ public class ImageStorageService {
     }
 
     public String saveImage(MultipartFile file) {
+
+        return saveImage(
+                file,
+                productUploadDirectory,
+                "/uploads/products/"
+        );
+    }
+
+    public String saveProfileImage(MultipartFile file) {
+
+        return saveImage(
+                file,
+                profileUploadDirectory,
+                "/uploads/profiles/"
+        );
+    }
+
+    private String saveImage(
+            MultipartFile file,
+            Path uploadDirectory,
+            String imageUrlPath) {
 
         if (file.isEmpty()) {
             throw new IllegalArgumentException(
@@ -42,7 +67,8 @@ public class ImageStorageService {
             );
         }
 
-        String originalFilename = file.getOriginalFilename();
+        String originalFilename =
+                file.getOriginalFilename();
 
         String extension = "";
 
@@ -68,10 +94,28 @@ public class ImageStorageService {
             );
         }
 
-        return "/uploads/products/" + fileName;
+        return imageUrlPath + fileName;
     }
 
     public void deleteImage(String imageUrl) {
+
+        deleteImage(
+                imageUrl,
+                productUploadDirectory
+        );
+    }
+
+    public void deleteProfileImage(String imageUrl) {
+
+        deleteImage(
+                imageUrl,
+                profileUploadDirectory
+        );
+    }
+
+    private void deleteImage(
+            String imageUrl,
+            Path uploadDirectory) {
 
         String fileName =
                 Paths.get(imageUrl).getFileName().toString();

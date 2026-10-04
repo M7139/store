@@ -13,6 +13,7 @@ import com.ga.store.model.User;
 import com.ga.store.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -22,15 +23,18 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationService emailVerificationService;
+    private final ImageStorageService imageStorageService;
 
     public UserService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            EmailVerificationService emailVerificationService) {
+            EmailVerificationService emailVerificationService,
+            ImageStorageService imageStorageService) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailVerificationService = emailVerificationService;
+        this.imageStorageService = imageStorageService;
     }
 
     public List<User> getAllUsers() {
@@ -145,9 +149,42 @@ public class UserService {
 
         User user = getUserByEmail(email);
 
-        user.setFirstName(request.getFirstName().trim());
-        user.setLastName(request.getLastName().trim());
+        user.setFirstName(
+                request.getFirstName().trim()
+        );
+
+        user.setLastName(
+                request.getLastName().trim()
+        );
 
         return userRepository.save(user);
+    }
+
+    public User uploadProfilePicture(
+            String email,
+            MultipartFile file) {
+
+        User user = getUserByEmail(email);
+
+        String oldProfilePicture =
+                user.getProfilePictureUrl();
+
+        String profilePictureUrl =
+                imageStorageService.saveProfileImage(file);
+
+        user.setProfilePictureUrl(profilePictureUrl);
+
+        User savedUser =
+                userRepository.save(user);
+
+        if (oldProfilePicture != null
+                && !oldProfilePicture.isBlank()) {
+
+            imageStorageService.deleteProfileImage(
+                    oldProfilePicture
+            );
+        }
+
+        return savedUser;
     }
 }
