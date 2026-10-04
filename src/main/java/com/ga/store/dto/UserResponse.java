@@ -12,12 +12,21 @@ public class UserResponse {
     private UserRole role;
     private UserStatus status;
     private boolean verified;
+    private String profilePictureUrl;
 
     public UserResponse() {
     }
 
-    public UserResponse(Long id, String firstName, String lastName, String email,
-                        UserRole role, UserStatus status, boolean verified) {
+    public UserResponse(
+            Long id,
+            String firstName,
+            String lastName,
+            String email,
+            UserRole role,
+            UserStatus status,
+            boolean verified,
+            String profilePictureUrl) {
+
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -25,6 +34,7 @@ public class UserResponse {
         this.role = role;
         this.status = status;
         this.verified = verified;
+        this.profilePictureUrl = profilePictureUrl;
     }
 
     public Long getId() {
@@ -81,5 +91,13 @@ public class UserResponse {
 
     public void setVerified(boolean verified) {
         this.verified = verified;
+    }
+
+    public String getProfilePictureUrl() {
+        return profilePictureUrl;
+    }
+
+    public void setProfilePictureUrl(String profilePictureUrl) {
+        this.profilePictureUrl = profilePictureUrl;
     }
 }

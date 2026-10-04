@@ -51,7 +51,8 @@ public class AuthController {
                 user.getEmail(),
                 user.getRole(),
                 user.getStatus(),
-                user.isVerified()
+                user.isVerified(),
+                user.getProfilePictureUrl()
         );
 
         return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -72,7 +73,8 @@ public class AuthController {
                 user.getEmail(),
                 user.getRole(),
                 user.getStatus(),
-                user.isVerified()
+                user.isVerified(),
+                user.getProfilePictureUrl()
         );
 
         LoginResponse response = new LoginResponse(
@@ -84,7 +86,8 @@ public class AuthController {
     }
 
     @GetMapping("/verify-email")
-    public ResponseEntity<String> verifyEmail(@RequestParam String token) {
+    public ResponseEntity<String> verifyEmail(
+            @RequestParam String token) {
 
         emailVerificationService.verifyEmail(token);
 
@@ -98,7 +101,9 @@ public class AuthController {
     public ResponseEntity<String> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request) {
 
-        passwordResetService.requestPasswordReset(request.getEmail());
+        passwordResetService.requestPasswordReset(
+                request.getEmail()
+        );
 
         return new ResponseEntity<>(
                 "Password reset request created",
@@ -122,7 +127,8 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<String> getCurrentUser(Authentication authentication) {
+    public ResponseEntity<String> getCurrentUser(
+            Authentication authentication) {
 
         return new ResponseEntity<>(
                 "Authenticated as: " + authentication.getName(),
