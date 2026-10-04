@@ -1,6 +1,8 @@
 package com.ga.store.controller;
 
 import com.ga.store.dto.ChangePasswordRequest;
+import com.ga.store.dto.UserResponse;
+import com.ga.store.model.User;
 import com.ga.store.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -16,6 +18,31 @@ public class UserController {
 
     public UserController(UserService userService) {
         this.userService = userService;
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getCurrentUser(
+            Authentication authentication) {
+
+        String email = authentication.getName();
+
+        User user = userService.getUserByEmail(email);
+
+        UserResponse response = new UserResponse(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getRole(),
+                user.getStatus(),
+                user.isVerified(),
+                user.getProfilePictureUrl()
+        );
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.OK
+        );
     }
 
     @PatchMapping("/me/password")

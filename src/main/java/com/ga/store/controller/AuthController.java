@@ -126,13 +126,6 @@ public class AuthController {
         );
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<String> getCurrentUser(
-            Authentication authentication) {
 
-        return new ResponseEntity<>(
-                "Authenticated as: " + authentication.getName(),
-                HttpStatus.OK
-        );
-    }
+
 }
