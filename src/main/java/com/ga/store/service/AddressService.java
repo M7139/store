@@ -62,4 +62,37 @@ public class AddressService {
                                 "Home address not found"
                         ));
     }
+
+    public Address updateAddress(
+            String email,
+            AddressRequest request) {
+
+        Address address = getAddressByUser(email);
+
+        String area = request.getArea();
+
+        if (area != null) {
+            area = area.trim();
+        }
+
+        address.setHouse(
+                request.getHouse().trim()
+        );
+
+        address.setRoad(
+                request.getRoad().trim()
+        );
+
+        address.setBlock(
+                request.getBlock().trim()
+        );
+
+        address.setArea(area);
+
+        address.setPhoneNumber(
+                request.getPhoneNumber().trim()
+        );
+
+        return addressRepository.save(address);
+    }
 }
