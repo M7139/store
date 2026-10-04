@@ -2,6 +2,7 @@ package com.ga.store.service;
 
 import com.ga.store.dto.OrderItemResponse;
 import com.ga.store.dto.OrderResponse;
+import com.ga.store.enums.OrderStatus;
 import com.ga.store.exception.InformationExistsException;
 import com.ga.store.exception.InformationNotFoundException;
 import com.ga.store.model.*;
@@ -217,6 +218,61 @@ public class OrderService {
         }
 
         return createOrderResponse(order);
+    }
+
+    @Transactional
+    public OrderResponse cancelOrder(
+            String email,
+            Long orderId) {
+
+        User user =
+                userService.getUserByEmail(email);
+
+        Order order =
+                orderRepository.findById(orderId)
+                        .orElseThrow(() ->
+                                new InformationNotFoundException(
+                                        "Order not found"
+                                ));
+
+        if (!order.getUser().getId()
+                .equals(user.getId())) {
+
+            throw new InformationNotFoundException(
+                    "Order not found"
+            );
+        }
+
+        if (order.getStatus() != OrderStatus.PENDING
+                && order.getStatus() != OrderStatus.CONFIRMED) {
+
+            throw new InformationExistsException(
+                    "Order cannot be cancelled"
+            );
+        }
+
+        List<OrderItem> orderItems =
+                orderItemRepository.findByOrder(order);
+
+        for (OrderItem orderItem : orderItems) {
+
+            Product product =
+                    orderItem.getProduct();
+
+            product.setStockQuantity(
+                    product.getStockQuantity()
+                            + orderItem.getQuantity()
+            );
+
+            productRepository.save(product);
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+
+        Order savedOrder =
+                orderRepository.save(order);
+
+        return createOrderResponse(savedOrder);
     }
 
     private OrderResponse createOrderResponse(
