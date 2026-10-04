@@ -172,6 +172,30 @@ public class CartService {
         return cartItemRepository.save(cartItem);
     }
 
+    public void removeCartItem(
+            String email,
+            Long cartItemId) {
+
+        Cart cart = getOrCreateCart(email);
+
+        CartItem cartItem =
+                cartItemRepository.findById(cartItemId)
+                        .orElseThrow(() ->
+                                new InformationNotFoundException(
+                                        "Cart item not found"
+                                ));
+
+        if (!cartItem.getCart().getId()
+                .equals(cart.getId())) {
+
+            throw new InformationNotFoundException(
+                    "Cart item not found"
+            );
+        }
+
+        cartItemRepository.delete(cartItem);
+    }
+
     private CartItemResponse createCartItemResponse(
             CartItem cartItem) {
 
