@@ -1,9 +1,11 @@
 package com.ga.store.service;
 
+import com.ga.store.dto.CartItemQuantityRequest;
 import com.ga.store.dto.CartItemRequest;
 import com.ga.store.dto.CartItemResponse;
 import com.ga.store.dto.CartResponse;
 import com.ga.store.exception.InformationExistsException;
+import com.ga.store.exception.InformationNotFoundException;
 import com.ga.store.model.Cart;
 import com.ga.store.model.CartItem;
 import com.ga.store.model.Product;
@@ -126,6 +128,48 @@ public class CartService {
                 itemResponses,
                 total
         );
+    }
+
+    public CartItem updateCartItemQuantity(
+            String email,
+            Long cartItemId,
+            CartItemQuantityRequest request) {
+
+        Cart cart = getOrCreateCart(email);
+
+        CartItem cartItem =
+                cartItemRepository.findById(cartItemId)
+                        .orElseThrow(() ->
+                                new InformationNotFoundException(
+                                        "Cart item not found"
+                                ));
+
+        if (!cartItem.getCart().getId()
+                .equals(cart.getId())) {
+
+            throw new InformationNotFoundException(
+                    "Cart item not found"
+            );
+        }
+
+        Product product =
+                productService.getActiveProductById(
+                        cartItem.getProduct().getId()
+                );
+
+        if (request.getQuantity()
+                > product.getStockQuantity()) {
+
+            throw new InformationExistsException(
+                    "Requested quantity exceeds available stock"
+            );
+        }
+
+        cartItem.setQuantity(
+                request.getQuantity()
+        );
+
+        return cartItemRepository.save(cartItem);
     }
 
     private CartItemResponse createCartItemResponse(
