@@ -3,6 +3,7 @@ package com.ga.store.service;
 import com.ga.store.dto.OrderItemResponse;
 import com.ga.store.dto.OrderResponse;
 import com.ga.store.exception.InformationExistsException;
+import com.ga.store.exception.InformationNotFoundException;
 import com.ga.store.model.*;
 import com.ga.store.repository.CartItemRepository;
 import com.ga.store.repository.OrderItemRepository;
@@ -191,6 +192,31 @@ public class OrderService {
         return orders.stream()
                 .map(this::createOrderResponse)
                 .toList();
+    }
+
+    public OrderResponse getOrderByIdForUser(
+            String email,
+            Long orderId) {
+
+        User user =
+                userService.getUserByEmail(email);
+
+        Order order =
+                orderRepository.findById(orderId)
+                        .orElseThrow(() ->
+                                new InformationNotFoundException(
+                                        "Order not found"
+                                ));
+
+        if (!order.getUser().getId()
+                .equals(user.getId())) {
+
+            throw new InformationNotFoundException(
+                    "Order not found"
+            );
+        }
+
+        return createOrderResponse(order);
     }
 
     private OrderResponse createOrderResponse(
