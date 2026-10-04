@@ -288,20 +288,12 @@ public class OrderService {
         OrderStatus newStatus =
                 request.getStatus();
 
-        if (currentStatus == OrderStatus.CANCELLED) {
-            throw new InformationExistsException(
-                    "Cancelled order status cannot be changed"
-            );
-        }
-
-        if (currentStatus == OrderStatus.DELIVERED) {
-            throw new InformationExistsException(
-                    "Delivered order status cannot be changed"
-            );
-        }
+        validateStatusTransition(
+                currentStatus,
+                newStatus
+        );
 
         if (newStatus == OrderStatus.CANCELLED) {
-
             restoreOrderStock(order);
         }
 
@@ -311,6 +303,40 @@ public class OrderService {
                 orderRepository.save(order);
 
         return createOrderResponse(savedOrder);
+    }
+
+    private void validateStatusTransition(
+            OrderStatus currentStatus,
+            OrderStatus newStatus) {
+
+        boolean validTransition = switch (currentStatus) {
+
+            case PENDING ->
+                    newStatus == OrderStatus.CONFIRMED
+                            || newStatus == OrderStatus.CANCELLED;
+
+            case CONFIRMED ->
+                    newStatus == OrderStatus.PROCESSING
+                            || newStatus == OrderStatus.CANCELLED;
+
+            case PROCESSING ->
+                    newStatus == OrderStatus.SHIPPED;
+
+            case SHIPPED ->
+                    newStatus == OrderStatus.DELIVERED;
+
+            case DELIVERED, CANCELLED ->
+                    false;
+        };
+
+        if (!validTransition) {
+            throw new InformationExistsException(
+                    "Invalid order status change from "
+                            + currentStatus
+                            + " to "
+                            + newStatus
+            );
+        }
     }
 
     private void restoreOrderStock(
