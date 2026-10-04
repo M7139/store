@@ -2,6 +2,7 @@ package com.ga.store.service;
 
 import com.ga.store.dto.AddressRequest;
 import com.ga.store.exception.InformationExistsException;
+import com.ga.store.exception.InformationNotFoundException;
 import com.ga.store.model.Address;
 import com.ga.store.model.User;
 import com.ga.store.repository.AddressRepository;
@@ -49,5 +50,16 @@ public class AddressService {
         );
 
         return addressRepository.save(address);
+    }
+
+    public Address getAddressByUser(String email) {
+
+        User user = userService.getUserByEmail(email);
+
+        return addressRepository.findByUser(user)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "Home address not found"
+                        ));
     }
 }
