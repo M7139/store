@@ -177,4 +177,51 @@ public class OrderService {
                 savedOrder.getCreatedAt()
         );
     }
+
+    public List<OrderResponse> getOrdersByUser(
+            String email) {
+
+        User user =
+                userService.getUserByEmail(email);
+
+        List<Order> orders =
+                orderRepository
+                        .findByUserOrderByCreatedAtDesc(user);
+
+        return orders.stream()
+                .map(this::createOrderResponse)
+                .toList();
+    }
+
+    private OrderResponse createOrderResponse(
+            Order order) {
+
+        List<OrderItemResponse> itemResponses =
+                orderItemRepository
+                        .findByOrder(order)
+                        .stream()
+                        .map(orderItem ->
+                                new OrderItemResponse(
+                                        orderItem.getId(),
+                                        orderItem.getProduct().getId(),
+                                        orderItem.getProductName(),
+                                        orderItem.getPrice(),
+                                        orderItem.getQuantity(),
+                                        orderItem.getSubtotal()
+                                ))
+                        .toList();
+
+        return new OrderResponse(
+                order.getId(),
+                order.getStatus(),
+                order.getTotalAmount(),
+                order.getHouse(),
+                order.getRoad(),
+                order.getBlock(),
+                order.getArea(),
+                order.getPhoneNumber(),
+                itemResponses,
+                order.getCreatedAt()
+        );
+    }
 }
