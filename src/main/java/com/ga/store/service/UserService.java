@@ -4,6 +4,7 @@ import com.ga.store.dto.ChangePasswordRequest;
 import com.ga.store.dto.LoginRequest;
 import com.ga.store.dto.RegisterRequest;
 import com.ga.store.dto.UpdateProfileRequest;
+import com.ga.store.dto.UserStatusRequest;
 import com.ga.store.exception.EmailNotVerifiedException;
 import com.ga.store.exception.InactiveAccountException;
 import com.ga.store.exception.InformationExistsException;
@@ -136,9 +137,13 @@ public class UserService {
         }
 
         String newPasswordHash =
-                passwordEncoder.encode(request.getNewPassword());
+                passwordEncoder.encode(
+                        request.getNewPassword()
+                );
 
-        user.setPasswordHash(newPasswordHash);
+        user.setPasswordHash(
+                newPasswordHash
+        );
 
         userRepository.save(user);
     }
@@ -147,7 +152,8 @@ public class UserService {
             String email,
             UpdateProfileRequest request) {
 
-        User user = getUserByEmail(email);
+        User user =
+                getUserByEmail(email);
 
         user.setFirstName(
                 request.getFirstName().trim()
@@ -164,15 +170,19 @@ public class UserService {
             String email,
             MultipartFile file) {
 
-        User user = getUserByEmail(email);
+        User user =
+                getUserByEmail(email);
 
         String oldProfilePicture =
                 user.getProfilePictureUrl();
 
         String profilePictureUrl =
-                imageStorageService.saveProfileImage(file);
+                imageStorageService
+                        .saveProfileImage(file);
 
-        user.setProfilePictureUrl(profilePictureUrl);
+        user.setProfilePictureUrl(
+                profilePictureUrl
+        );
 
         User savedUser =
                 userRepository.save(user);
@@ -180,11 +190,26 @@ public class UserService {
         if (oldProfilePicture != null
                 && !oldProfilePicture.isBlank()) {
 
-            imageStorageService.deleteProfileImage(
-                    oldProfilePicture
-            );
+            imageStorageService
+                    .deleteProfileImage(
+                            oldProfilePicture
+                    );
         }
 
         return savedUser;
+    }
+
+    public User updateUserStatus(
+            Long userId,
+            UserStatusRequest request) {
+
+        User user =
+                getUserById(userId);
+
+        user.setStatus(
+                request.getStatus()
+        );
+
+        return userRepository.save(user);
     }
 }
