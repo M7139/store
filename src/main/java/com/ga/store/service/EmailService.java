@@ -63,4 +63,71 @@ public class EmailService {
 
         mailSender.send(message);
     }
+
+    public void sendOrderConfirmedEmail(
+            String toEmail,
+            Long orderId) {
+
+        SimpleMailMessage message =
+                new SimpleMailMessage();
+
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject(
+                "Order Confirmed - #" + orderId
+        );
+
+        message.setText(
+                "Your order #" + orderId +
+                        " has been confirmed.\n\n" +
+                        "We will begin preparing your order soon.\n\n" +
+                        "Thank you for shopping with us!"
+        );
+
+        mailSender.send(message);
+    }
+
+    public void sendOrderCancelledEmail(
+            String toEmail,
+            Long orderId) {
+
+        SimpleMailMessage message =
+                new SimpleMailMessage();
+
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject(
+                "Order Cancelled - #" + orderId
+        );
+
+        message.setText(
+                "Your order #" + orderId +
+                        " has been cancelled.\n\n" +
+                        "The products have been returned to stock."
+        );
+
+        mailSender.send(message);
+    }
+
+    public void sendOrderDeliveredEmail(
+            String toEmail,
+            Long orderId) {
+
+        SimpleMailMessage message =
+                new SimpleMailMessage();
+
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject(
+                "Order Delivered - #" + orderId
+        );
+
+        message.setText(
+                "Your order #" + orderId +
+                        " has been delivered.\n\n" +
+                        "Thank you for shopping with us!"
+        );
+
+        mailSender.send(message);
+    }
 }
