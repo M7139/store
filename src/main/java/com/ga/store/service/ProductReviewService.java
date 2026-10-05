@@ -11,6 +11,8 @@ import com.ga.store.repository.OrderItemRepository;
 import com.ga.store.repository.ProductReviewRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class ProductReviewService {
 
@@ -92,6 +94,38 @@ public class ProductReviewService {
         return createProductReviewResponse(
                 savedReview
         );
+    }
+
+    public List<ProductReviewResponse> getReviewsByProduct(
+            Long productId) {
+
+        Product product =
+                productService.getActiveProductById(
+                        productId
+                );
+
+        return productReviewRepository
+                .findByProductOrderByCreatedAtDesc(
+                        product
+                )
+                .stream()
+                .map(this::createProductReviewResponse)
+                .toList();
+    }
+
+    public List<ProductReviewResponse> getReviewsByUser(
+            String email) {
+
+        User user =
+                userService.getUserByEmail(email);
+
+        return productReviewRepository
+                .findByUserOrderByCreatedAtDesc(
+                        user
+                )
+                .stream()
+                .map(this::createProductReviewResponse)
+                .toList();
     }
 
     private ProductReviewResponse createProductReviewResponse(
