@@ -3,6 +3,7 @@ package com.ga.store.service;
 import com.ga.store.dto.PaymentRequest;
 import com.ga.store.dto.PaymentResponse;
 import com.ga.store.enums.OrderStatus;
+import com.ga.store.enums.PaymentStatus;
 import com.ga.store.exception.InformationExistsException;
 import com.ga.store.exception.InformationNotFoundException;
 import com.ga.store.model.Order;
@@ -13,6 +14,7 @@ import com.ga.store.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PaymentService {
@@ -130,6 +132,63 @@ public class PaymentService {
                 .stream()
                 .map(this::createPaymentResponse)
                 .toList();
+    }
+
+    public List<PaymentResponse> getAllPayments() {
+
+        return paymentRepository.findAll()
+                .stream()
+                .map(this::createPaymentResponse)
+                .toList();
+    }
+
+    public void markPaymentAsPaid(
+            Order order) {
+
+        Payment payment =
+                paymentRepository.findByOrder(order)
+                        .orElseThrow(() ->
+                                new InformationNotFoundException(
+                                        "Payment not found"
+                                ));
+
+        if (payment.getStatus()
+                != PaymentStatus.PENDING) {
+
+            throw new InformationExistsException(
+                    "Payment cannot be marked as paid"
+            );
+        }
+
+        payment.setStatus(
+                PaymentStatus.PAID
+        );
+
+        paymentRepository.save(payment);
+    }
+
+    public void cancelPayment(
+            Order order) {
+
+        Optional<Payment> optionalPayment =
+                paymentRepository.findByOrder(order);
+
+        if (optionalPayment.isEmpty()) {
+            return;
+        }
+
+        Payment payment =
+                optionalPayment.get();
+
+        if (payment.getStatus()
+                == PaymentStatus.PENDING) {
+
+            payment.setStatus(
+                    PaymentStatus.CANCELLED
+            );
+
+            paymentRepository.save(payment);
+        }
     }
 
     private PaymentResponse createPaymentResponse(
