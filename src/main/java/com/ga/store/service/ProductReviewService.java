@@ -4,6 +4,7 @@ import com.ga.store.dto.ProductReviewRequest;
 import com.ga.store.dto.ProductReviewResponse;
 import com.ga.store.enums.OrderStatus;
 import com.ga.store.exception.InformationExistsException;
+import com.ga.store.exception.InformationNotFoundException;
 import com.ga.store.model.Product;
 import com.ga.store.model.ProductReview;
 import com.ga.store.model.User;
@@ -126,6 +127,84 @@ public class ProductReviewService {
                 .stream()
                 .map(this::createProductReviewResponse)
                 .toList();
+    }
+
+    public ProductReviewResponse updateReview(
+            String email,
+            Long reviewId,
+            ProductReviewRequest request) {
+
+        User user =
+                userService.getUserByEmail(email);
+
+        ProductReview productReview =
+                productReviewRepository
+                        .findById(reviewId)
+                        .orElseThrow(() ->
+                                new InformationNotFoundException(
+                                        "Review not found"
+                                ));
+
+        if (!productReview.getUser()
+                .getId()
+                .equals(user.getId())) {
+
+            throw new InformationNotFoundException(
+                    "Review not found"
+            );
+        }
+
+        String comment = request.getComment();
+
+        if (comment != null) {
+            comment = comment.trim();
+        }
+
+        productReview.setRating(
+                request.getRating()
+        );
+
+        productReview.setComment(
+                comment
+        );
+
+        ProductReview savedReview =
+                productReviewRepository.save(
+                        productReview
+                );
+
+        return createProductReviewResponse(
+                savedReview
+        );
+    }
+
+    public void deleteReview(
+            String email,
+            Long reviewId) {
+
+        User user =
+                userService.getUserByEmail(email);
+
+        ProductReview productReview =
+                productReviewRepository
+                        .findById(reviewId)
+                        .orElseThrow(() ->
+                                new InformationNotFoundException(
+                                        "Review not found"
+                                ));
+
+        if (!productReview.getUser()
+                .getId()
+                .equals(user.getId())) {
+
+            throw new InformationNotFoundException(
+                    "Review not found"
+            );
+        }
+
+        productReviewRepository.delete(
+                productReview
+        );
     }
 
     private ProductReviewResponse createProductReviewResponse(
