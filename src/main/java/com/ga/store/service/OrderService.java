@@ -28,6 +28,7 @@ public class OrderService {
     private final UserService userService;
     private final AddressService addressService;
     private final CartService cartService;
+    private final PaymentService paymentService;
 
     public OrderService(
             OrderRepository orderRepository,
@@ -36,7 +37,8 @@ public class OrderService {
             ProductRepository productRepository,
             UserService userService,
             AddressService addressService,
-            CartService cartService) {
+            CartService cartService,
+            PaymentService paymentService) {
 
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
@@ -45,6 +47,7 @@ public class OrderService {
         this.userService = userService;
         this.addressService = addressService;
         this.cartService = cartService;
+        this.paymentService = paymentService;
     }
 
     @Transactional
@@ -259,6 +262,10 @@ public class OrderService {
         Order savedOrder =
                 orderRepository.save(order);
 
+        paymentService.cancelPayment(
+                savedOrder
+        );
+
         return createOrderResponse(savedOrder);
     }
 
@@ -301,6 +308,20 @@ public class OrderService {
 
         Order savedOrder =
                 orderRepository.save(order);
+
+        if (newStatus == OrderStatus.CANCELLED) {
+
+            paymentService.cancelPayment(
+                    savedOrder
+            );
+        }
+
+        if (newStatus == OrderStatus.DELIVERED) {
+
+            paymentService.markPaymentAsPaid(
+                    savedOrder
+            );
+        }
 
         return createOrderResponse(savedOrder);
     }
