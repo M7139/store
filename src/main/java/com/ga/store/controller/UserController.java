@@ -3,15 +3,19 @@ package com.ga.store.controller;
 import com.ga.store.dto.ChangePasswordRequest;
 import com.ga.store.dto.UpdateProfileRequest;
 import com.ga.store.dto.UserResponse;
+import com.ga.store.dto.UserStatusRequest;
 import com.ga.store.model.User;
 import com.ga.store.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -101,6 +105,62 @@ public class UserController {
 
         return new ResponseEntity<>(
                 "Password changed successfully",
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+
+        List<UserResponse> response =
+                userService.getAllUsers()
+                        .stream()
+                        .map(this::createUserResponse)
+                        .toList();
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/admin/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> getUserById(
+            @PathVariable Long userId) {
+
+        User user =
+                userService.getUserById(
+                        userId
+                );
+
+        UserResponse response =
+                createUserResponse(user);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.OK
+        );
+    }
+
+    @PatchMapping("/admin/{userId}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> updateUserStatus(
+            @PathVariable Long userId,
+            @Valid @RequestBody UserStatusRequest request) {
+
+        User user =
+                userService.updateUserStatus(
+                        userId,
+                        request
+                );
+
+        UserResponse response =
+                createUserResponse(user);
+
+        return new ResponseEntity<>(
+                response,
                 HttpStatus.OK
         );
     }
