@@ -12,6 +12,8 @@ import com.ga.store.repository.OrderRepository;
 import com.ga.store.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class PaymentService {
 
@@ -81,6 +83,53 @@ public class PaymentService {
         return createPaymentResponse(
                 savedPayment
         );
+    }
+
+    public PaymentResponse getPaymentByOrder(
+            String email,
+            Long orderId) {
+
+        User user =
+                userService.getUserByEmail(email);
+
+        Order order =
+                orderRepository.findById(orderId)
+                        .orElseThrow(() ->
+                                new InformationNotFoundException(
+                                        "Order not found"
+                                ));
+
+        if (!order.getUser().getId()
+                .equals(user.getId())) {
+
+            throw new InformationNotFoundException(
+                    "Order not found"
+            );
+        }
+
+        Payment payment =
+                paymentRepository.findByOrder(order)
+                        .orElseThrow(() ->
+                                new InformationNotFoundException(
+                                        "Payment not found"
+                                ));
+
+        return createPaymentResponse(
+                payment
+        );
+    }
+
+    public List<PaymentResponse> getPaymentsByUser(
+            String email) {
+
+        User user =
+                userService.getUserByEmail(email);
+
+        return paymentRepository
+                .findByUserOrderByCreatedAtDesc(user)
+                .stream()
+                .map(this::createPaymentResponse)
+                .toList();
     }
 
     private PaymentResponse createPaymentResponse(
