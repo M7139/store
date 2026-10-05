@@ -28,6 +28,8 @@ public class OrderService {
     private final UserService userService;
     private final AddressService addressService;
     private final CartService cartService;
+    private final PaymentService paymentService;
+    private final EmailService emailService;
 
     public OrderService(
             OrderRepository orderRepository,
@@ -36,7 +38,9 @@ public class OrderService {
             ProductRepository productRepository,
             UserService userService,
             AddressService addressService,
-            CartService cartService) {
+            CartService cartService,
+            PaymentService paymentService,
+            EmailService emailService) {
 
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
@@ -45,6 +49,8 @@ public class OrderService {
         this.userService = userService;
         this.addressService = addressService;
         this.cartService = cartService;
+        this.paymentService = paymentService;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -259,6 +265,15 @@ public class OrderService {
         Order savedOrder =
                 orderRepository.save(order);
 
+        paymentService.cancelPayment(
+                savedOrder
+        );
+
+        emailService.sendOrderCancelledEmail(
+                savedOrder.getUser().getEmail(),
+                savedOrder.getId()
+        );
+
         return createOrderResponse(savedOrder);
     }
 
@@ -301,6 +316,38 @@ public class OrderService {
 
         Order savedOrder =
                 orderRepository.save(order);
+
+        if (newStatus == OrderStatus.CONFIRMED) {
+
+            emailService.sendOrderConfirmedEmail(
+                    savedOrder.getUser().getEmail(),
+                    savedOrder.getId()
+            );
+        }
+
+        if (newStatus == OrderStatus.CANCELLED) {
+
+            paymentService.cancelPayment(
+                    savedOrder
+            );
+
+            emailService.sendOrderCancelledEmail(
+                    savedOrder.getUser().getEmail(),
+                    savedOrder.getId()
+            );
+        }
+
+        if (newStatus == OrderStatus.DELIVERED) {
+
+            paymentService.markPaymentAsPaid(
+                    savedOrder
+            );
+
+            emailService.sendOrderDeliveredEmail(
+                    savedOrder.getUser().getEmail(),
+                    savedOrder.getId()
+            );
+        }
 
         return createOrderResponse(savedOrder);
     }
