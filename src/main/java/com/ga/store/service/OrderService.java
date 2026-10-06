@@ -32,6 +32,7 @@ public class OrderService {
     private final CartService cartService;
     private final PaymentService paymentService;
     private final EmailService emailService;
+    private final OrderNotificationService orderNotificationService;
 
     public OrderService(
             OrderRepository orderRepository,
@@ -42,7 +43,8 @@ public class OrderService {
             AddressService addressService,
             CartService cartService,
             PaymentService paymentService,
-            EmailService emailService) {
+            EmailService emailService,
+            OrderNotificationService orderNotificationService) {
 
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
@@ -53,6 +55,7 @@ public class OrderService {
         this.cartService = cartService;
         this.paymentService = paymentService;
         this.emailService = emailService;
+        this.orderNotificationService = orderNotificationService;
     }
 
     @Transactional
@@ -304,6 +307,12 @@ public class OrderService {
                 savedOrder.getId()
         );
 
+        orderNotificationService.sendOrderStatusUpdate(
+                savedOrder.getUser().getEmail(),
+                savedOrder.getId(),
+                savedOrder.getStatus()
+        );
+
         return createOrderResponse(savedOrder);
     }
 
@@ -378,6 +387,12 @@ public class OrderService {
                     savedOrder.getId()
             );
         }
+
+        orderNotificationService.sendOrderStatusUpdate(
+                savedOrder.getUser().getEmail(),
+                savedOrder.getId(),
+                savedOrder.getStatus()
+        );
 
         return createOrderResponse(savedOrder);
     }
