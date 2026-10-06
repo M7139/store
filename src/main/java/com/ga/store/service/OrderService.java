@@ -12,6 +12,8 @@ import com.ga.store.repository.OrderItemRepository;
 import com.ga.store.repository.OrderRepository;
 import com.ga.store.repository.ProductRepository;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -22,6 +24,11 @@ import java.util.Map;
 
 @Service
 public class OrderService {
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(
+                    OrderService.class
+            );
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -74,6 +81,12 @@ public class OrderService {
                 cartItemRepository.findByCart(cart);
 
         if (cartItems.isEmpty()) {
+
+            logger.warn(
+                    "Checkout failed for user id {} because cart is empty",
+                    user.getId()
+            );
+
             throw new InformationExistsException(
                     "Cart is empty"
             );
@@ -114,6 +127,13 @@ public class OrderService {
             );
 
             if (!product.isActive()) {
+
+                logger.warn(
+                        "Checkout failed for user id {} because product id {} is inactive",
+                        user.getId(),
+                        product.getId()
+                );
+
                 throw new InformationExistsException(
                         product.getName()
                                 + " is no longer available"
@@ -122,6 +142,12 @@ public class OrderService {
 
             if (cartItem.getQuantity()
                     > product.getStockQuantity()) {
+
+                logger.warn(
+                        "Checkout failed for user id {} because product id {} has insufficient stock",
+                        user.getId(),
+                        product.getId()
+                );
 
                 throw new InformationExistsException(
                         "Not enough stock for "
@@ -206,6 +232,13 @@ public class OrderService {
 
         cartItemRepository.deleteAll(cartItems);
 
+        logger.info(
+                "Order id {} created successfully for user id {} with total {}",
+                savedOrder.getId(),
+                user.getId(),
+                savedOrder.getTotalAmount()
+        );
+
         return new OrderResponse(
                 savedOrder.getId(),
                 savedOrder.getStatus(),
@@ -278,6 +311,12 @@ public class OrderService {
         if (!order.getUser().getId()
                 .equals(user.getId())) {
 
+            logger.warn(
+                    "User id {} attempted to cancel order id {} owned by another user",
+                    user.getId(),
+                    orderId
+            );
+
             throw new InformationNotFoundException(
                     "Order not found"
             );
@@ -285,6 +324,12 @@ public class OrderService {
 
         if (order.getStatus() != OrderStatus.PENDING
                 && order.getStatus() != OrderStatus.CONFIRMED) {
+
+            logger.warn(
+                    "Cancellation rejected for order id {} with status {}",
+                    order.getId(),
+                    order.getStatus()
+            );
 
             throw new InformationExistsException(
                     "Order cannot be cancelled"
@@ -311,6 +356,12 @@ public class OrderService {
                 savedOrder.getUser().getEmail(),
                 savedOrder.getId(),
                 savedOrder.getStatus()
+        );
+
+        logger.info(
+                "Order id {} cancelled by user id {}",
+                savedOrder.getId(),
+                user.getId()
         );
 
         return createOrderResponse(savedOrder);
@@ -394,6 +445,13 @@ public class OrderService {
                 savedOrder.getStatus()
         );
 
+        logger.info(
+                "Order id {} status changed from {} to {}",
+                savedOrder.getId(),
+                currentStatus,
+                newStatus
+        );
+
         return createOrderResponse(savedOrder);
     }
 
@@ -422,6 +480,13 @@ public class OrderService {
         };
 
         if (!validTransition) {
+
+            logger.warn(
+                    "Invalid order status transition from {} to {}",
+                    currentStatus,
+                    newStatus
+            );
+
             throw new InformationExistsException(
                     "Invalid order status change from "
                             + currentStatus
@@ -456,6 +521,11 @@ public class OrderService {
 
             productRepository.save(product);
         }
+
+        logger.info(
+                "Stock restored for cancelled order id {}",
+                order.getId()
+        );
     }
 
     private OrderResponse createOrderResponse(
