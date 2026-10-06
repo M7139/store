@@ -39,6 +39,8 @@ public interface ProductRepository
             Long id
     );
 
+    // protection against overselling
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query(
             "SELECT p FROM Product p WHERE p.id = :id"

@@ -16,7 +16,9 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class OrderService {
@@ -74,13 +76,39 @@ public class OrderService {
             );
         }
 
+        cartItems.sort(
+                (firstItem, secondItem) ->
+                        firstItem.getProduct()
+                                .getId()
+                                .compareTo(
+                                        secondItem
+                                                .getProduct()
+                                                .getId()
+                                )
+        );
+
+        Map<Long, Product> lockedProducts =
+                new HashMap<>();
+
         BigDecimal totalAmount =
                 BigDecimal.ZERO;
 
         for (CartItem cartItem : cartItems) {
 
             Product product =
-                    cartItem.getProduct();
+                    productRepository
+                            .findByIdForUpdate(
+                                    cartItem.getProduct().getId()
+                            )
+                            .orElseThrow(() ->
+                                    new InformationNotFoundException(
+                                            "Product not found"
+                                    ));
+
+            lockedProducts.put(
+                    product.getId(),
+                    product
+            );
 
             if (!product.isActive()) {
                 throw new InformationExistsException(
@@ -129,7 +157,9 @@ public class OrderService {
         for (CartItem cartItem : cartItems) {
 
             Product product =
-                    cartItem.getProduct();
+                    lockedProducts.get(
+                            cartItem.getProduct().getId()
+                    );
 
             BigDecimal subtotal =
                     product.getPrice()
@@ -395,7 +425,14 @@ public class OrderService {
         for (OrderItem orderItem : orderItems) {
 
             Product product =
-                    orderItem.getProduct();
+                    productRepository
+                            .findByIdForUpdate(
+                                    orderItem.getProduct().getId()
+                            )
+                            .orElseThrow(() ->
+                                    new InformationNotFoundException(
+                                            "Product not found"
+                                    ));
 
             product.setStockQuantity(
                     product.getStockQuantity()
