@@ -23,7 +23,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             CustomUserDetailsService customUserDetailsService) {
 
         this.jwtUtils = jwtUtils;
-        this.customUserDetailsService = customUserDetailsService;
+        this.customUserDetailsService =
+                customUserDetailsService;
     }
 
     @Override
@@ -33,29 +34,60 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        String authorizationHeader = request.getHeader("Authorization");
+        String authorizationHeader =
+                request.getHeader(
+                        "Authorization"
+                );
 
-        if (authorizationHeader == null ||
-                !authorizationHeader.startsWith("Bearer ")) {
+        if (authorizationHeader == null
+                || !authorizationHeader.startsWith(
+                "Bearer "
+        )) {
 
-            filterChain.doFilter(request, response);
+            filterChain.doFilter(
+                    request,
+                    response
+            );
+
             return;
         }
 
-        String token = authorizationHeader.substring(7);
+        String token =
+                authorizationHeader.substring(7);
 
         if (!jwtUtils.validateToken(token)) {
-            filterChain.doFilter(request, response);
+
+            filterChain.doFilter(
+                    request,
+                    response
+            );
+
             return;
         }
 
-        String email = jwtUtils.extractEmail(token);
+        String email =
+                jwtUtils.extractEmail(token);
 
-        if (email != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (email != null
+                && SecurityContextHolder
+                .getContext()
+                .getAuthentication() == null) {
 
             UserDetails userDetails =
-                    customUserDetailsService.loadUserByUsername(email);
+                    customUserDetailsService
+                            .loadUserByUsername(
+                                    email
+                            );
+
+            if (!userDetails.isEnabled()) {
+
+                filterChain.doFilter(
+                        request,
+                        response
+                );
+
+                return;
+            }
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
@@ -64,10 +96,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             userDetails.getAuthorities()
                     );
 
-            SecurityContextHolder.getContext()
-                    .setAuthentication(authentication);
+            SecurityContextHolder
+                    .getContext()
+                    .setAuthentication(
+                            authentication
+                    );
         }
 
-        filterChain.doFilter(request, response);
+        filterChain.doFilter(
+                request,
+                response
+        );
     }
 }
