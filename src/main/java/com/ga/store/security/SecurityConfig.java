@@ -48,7 +48,10 @@ public class SecurityConfig {
                                 "/api/auth/verify-email",
                                 "/api/auth/forgot-password",
                                 "/api/auth/reset-password",
-                                "/uploads/**"
+                                "/uploads/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
                         ).permitAll()
 
                         .anyRequest().authenticated()
