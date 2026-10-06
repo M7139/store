@@ -138,9 +138,49 @@ public class DataSeeder implements CommandLineRunner {
         );
 
         createProductIfMissing(
+                "Honey Soap",
+                "Honey scented handmade soap",
+                new BigDecimal("2.75"),
+                18,
+                barSoap
+        );
+
+        createProductIfMissing(
+                "Oatmeal Soap",
+                "Oatmeal handmade soap",
+                new BigDecimal("2.75"),
+                18,
+                barSoap
+        );
+
+        createProductIfMissing(
                 "Honey Liquid Soap",
                 "Honey scented liquid soap",
                 new BigDecimal("3.50"),
+                15,
+                liquidSoap
+        );
+
+        createProductIfMissing(
+                "Aloe Liquid Soap",
+                "Aloe scented liquid soap",
+                new BigDecimal("3.50"),
+                15,
+                liquidSoap
+        );
+
+        createProductIfMissing(
+                "Rose Liquid Soap",
+                "Rose scented liquid soap",
+                new BigDecimal("3.75"),
+                15,
+                liquidSoap
+        );
+
+        createProductIfMissing(
+                "Lavender Liquid Soap",
+                "Lavender scented liquid soap",
+                new BigDecimal("3.75"),
                 15,
                 liquidSoap
         );
@@ -150,6 +190,30 @@ public class DataSeeder implements CommandLineRunner {
                 "A selection of Sedar soaps",
                 new BigDecimal("8.00"),
                 10,
+                giftSets
+        );
+
+        createProductIfMissing(
+                "Mini Soap Gift Box",
+                "A small gift box with handmade soaps",
+                new BigDecimal("6.50"),
+                10,
+                giftSets
+        );
+
+        createProductIfMissing(
+                "Luxury Soap Gift Box",
+                "A premium selection of Sedar soaps",
+                new BigDecimal("12.00"),
+                8,
+                giftSets
+        );
+
+        createProductIfMissing(
+                "Mixed Soap Gift Set",
+                "A mixed set of bar and liquid soaps",
+                new BigDecimal("10.00"),
+                8,
                 giftSets
         );
     }
