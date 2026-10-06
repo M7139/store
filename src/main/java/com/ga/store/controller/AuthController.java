@@ -10,11 +10,12 @@ import com.ga.store.model.User;
 import com.ga.store.security.JwtUtils;
 import com.ga.store.service.EmailVerificationService;
 import com.ga.store.service.PasswordResetService;
+import com.ga.store.service.RateLimitService;
 import com.ga.store.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,71 +26,114 @@ public class AuthController {
     private final JwtUtils jwtUtils;
     private final EmailVerificationService emailVerificationService;
     private final PasswordResetService passwordResetService;
+    private final RateLimitService rateLimitService;
 
     public AuthController(
             UserService userService,
             JwtUtils jwtUtils,
             EmailVerificationService emailVerificationService,
-            PasswordResetService passwordResetService) {
+            PasswordResetService passwordResetService,
+            RateLimitService rateLimitService) {
 
         this.userService = userService;
         this.jwtUtils = jwtUtils;
         this.emailVerificationService = emailVerificationService;
         this.passwordResetService = passwordResetService;
+        this.rateLimitService = rateLimitService;
     }
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(
+            HttpServletRequest httpRequest,
             @Valid @RequestBody RegisterRequest request) {
 
-        User user = userService.registerUser(request);
+        String ipAddress =
+                httpRequest.getRemoteAddr();
 
-        UserResponse response = new UserResponse(
-                user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getEmail(),
-                user.getRole(),
-                user.getStatus(),
-                user.isVerified(),
-                user.getProfilePictureUrl()
+        rateLimitService.checkLimit(
+                "register:" + ipAddress,
+                3,
+                10
         );
 
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        User user =
+                userService.registerUser(
+                        request
+                );
+
+        UserResponse response =
+                new UserResponse(
+                        user.getId(),
+                        user.getFirstName(),
+                        user.getLastName(),
+                        user.getEmail(),
+                        user.getRole(),
+                        user.getStatus(),
+                        user.isVerified(),
+                        user.getProfilePictureUrl()
+                );
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.CREATED
+        );
     }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
+            HttpServletRequest httpRequest,
             @Valid @RequestBody LoginRequest request) {
 
-        User user = userService.loginUser(request);
+        String ipAddress =
+                httpRequest.getRemoteAddr();
 
-        String token = jwtUtils.generateToken(user.getEmail());
-
-        UserResponse userResponse = new UserResponse(
-                user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getEmail(),
-                user.getRole(),
-                user.getStatus(),
-                user.isVerified(),
-                user.getProfilePictureUrl()
+        rateLimitService.checkLimit(
+                "login:" + ipAddress,
+                5,
+                1
         );
 
-        LoginResponse response = new LoginResponse(
-                token,
-                userResponse
-        );
+        User user =
+                userService.loginUser(
+                        request
+                );
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        String token =
+                jwtUtils.generateToken(
+                        user.getEmail()
+                );
+
+        UserResponse userResponse =
+                new UserResponse(
+                        user.getId(),
+                        user.getFirstName(),
+                        user.getLastName(),
+                        user.getEmail(),
+                        user.getRole(),
+                        user.getStatus(),
+                        user.isVerified(),
+                        user.getProfilePictureUrl()
+                );
+
+        LoginResponse response =
+                new LoginResponse(
+                        token,
+                        userResponse
+                );
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.OK
+        );
     }
 
     @GetMapping("/verify-email")
     public ResponseEntity<String> verifyEmail(
             @RequestParam String token) {
 
-        emailVerificationService.verifyEmail(token);
+        emailVerificationService.verifyEmail(
+                token
+        );
 
         return new ResponseEntity<>(
                 "Email verified successfully",
@@ -99,7 +143,17 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(
+            HttpServletRequest httpRequest,
             @Valid @RequestBody ForgotPasswordRequest request) {
+
+        String ipAddress =
+                httpRequest.getRemoteAddr();
+
+        rateLimitService.checkLimit(
+                "forgot-password:" + ipAddress,
+                3,
+                10
+        );
 
         passwordResetService.requestPasswordReset(
                 request.getEmail()
@@ -125,7 +179,4 @@ public class AuthController {
                 HttpStatus.OK
         );
     }
-
-
-
 }

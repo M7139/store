@@ -157,6 +157,29 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<Map<String, String>> handleRateLimitExceededException(
+            RateLimitExceededException exception) {
+
+        logger.warn(
+                "Rate limit exceeded: {}",
+                exception.getMessage()
+        );
+
+        Map<String, String> response =
+                new HashMap<>();
+
+        response.put(
+                "message",
+                exception.getMessage()
+        );
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.TOO_MANY_REQUESTS
+        );
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationException(
             MethodArgumentNotValidException exception) {
