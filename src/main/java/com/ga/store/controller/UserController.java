@@ -5,6 +5,7 @@ import com.ga.store.dto.UpdateProfileRequest;
 import com.ga.store.dto.UserResponse;
 import com.ga.store.dto.UserStatusRequest;
 import com.ga.store.model.User;
+import com.ga.store.service.AuditLogService;
 import com.ga.store.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -22,9 +23,14 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final AuditLogService auditLogService;
 
-    public UserController(UserService userService) {
+    public UserController(
+            UserService userService,
+            AuditLogService auditLogService) {
+
         this.userService = userService;
+        this.auditLogService = auditLogService;
     }
 
     @GetMapping("/me")
@@ -52,10 +58,11 @@ public class UserController {
 
         String email = authentication.getName();
 
-        User user = userService.updateProfile(
-                email,
-                request
-        );
+        User user =
+                userService.updateProfile(
+                        email,
+                        request
+                );
 
         UserResponse response =
                 createUserResponse(user);
@@ -147,14 +154,29 @@ public class UserController {
     @PatchMapping("/admin/{userId}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> updateUserStatus(
+            Authentication authentication,
             @PathVariable Long userId,
             @Valid @RequestBody UserStatusRequest request) {
+
+        User admin =
+                userService.getUserByEmail(
+                        authentication.getName()
+                );
 
         User user =
                 userService.updateUserStatus(
                         userId,
                         request
                 );
+
+        auditLogService.createAuditLog(
+                admin.getId(),
+                "USER_STATUS_CHANGED",
+                "Changed user "
+                        + user.getId()
+                        + " status to "
+                        + user.getStatus()
+        );
 
         UserResponse response =
                 createUserResponse(user);
