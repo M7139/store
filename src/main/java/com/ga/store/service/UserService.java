@@ -12,6 +12,8 @@ import com.ga.store.exception.InformationNotFoundException;
 import com.ga.store.exception.InvalidCredentialsException;
 import com.ga.store.model.User;
 import com.ga.store.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,6 +22,11 @@ import java.util.List;
 
 @Service
 public class UserService {
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(
+                    UserService.class
+            );
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -65,13 +72,20 @@ public class UserService {
     public User registerUser(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
+
+            logger.warn(
+                    "Registration failed because email already exists"
+            );
+
             throw new InformationExistsException(
                     "User with this email already exists"
             );
         }
 
         String passwordHash =
-                passwordEncoder.encode(request.getPassword());
+                passwordEncoder.encode(
+                        request.getPassword()
+                );
 
         User user = new User(
                 request.getFirstName(),
@@ -86,37 +100,74 @@ public class UserService {
         emailVerificationService
                 .createVerificationToken(savedUser);
 
+        logger.info(
+                "User registered successfully with id {}",
+                savedUser.getId()
+        );
+
         return savedUser;
     }
 
     public User loginUser(LoginRequest request) {
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() ->
-                        new InvalidCredentialsException(
-                                "Invalid email or password"
-                        ));
+        User user =
+                userRepository
+                        .findByEmail(request.getEmail())
+                        .orElseThrow(() -> {
+
+                            logger.warn(
+                                    "Login failed because user was not found"
+                            );
+
+                            return new InvalidCredentialsException(
+                                    "Invalid email or password"
+                            );
+                        });
 
         if (!passwordEncoder.matches(
                 request.getPassword(),
                 user.getPasswordHash())) {
+
+            logger.warn(
+                    "Login failed for user id {} because password was incorrect",
+                    user.getId()
+            );
 
             throw new InvalidCredentialsException(
                     "Invalid email or password"
             );
         }
 
-        if (user.getStatus().name().equals("INACTIVE")) {
+        if (user.getStatus()
+                .name()
+                .equals("INACTIVE")) {
+
+            logger.warn(
+                    "Login blocked for inactive user id {}",
+                    user.getId()
+            );
+
             throw new InactiveAccountException(
                     "Account is inactive"
             );
         }
 
         if (!user.isVerified()) {
+
+            logger.warn(
+                    "Login blocked for unverified user id {}",
+                    user.getId()
+            );
+
             throw new EmailNotVerifiedException(
                     "Email is not verified"
             );
         }
+
+        logger.info(
+                "User logged in successfully with id {}",
+                user.getId()
+        );
 
         return user;
     }
@@ -125,11 +176,17 @@ public class UserService {
             String email,
             ChangePasswordRequest request) {
 
-        User user = getUserByEmail(email);
+        User user =
+                getUserByEmail(email);
 
         if (!passwordEncoder.matches(
                 request.getCurrentPassword(),
                 user.getPasswordHash())) {
+
+            logger.warn(
+                    "Password change failed for user id {}",
+                    user.getId()
+            );
 
             throw new InvalidCredentialsException(
                     "Current password is incorrect"
@@ -146,6 +203,11 @@ public class UserService {
         );
 
         userRepository.save(user);
+
+        logger.info(
+                "Password changed successfully for user id {}",
+                user.getId()
+        );
     }
 
     public User updateProfile(
@@ -163,7 +225,15 @@ public class UserService {
                 request.getLastName().trim()
         );
 
-        return userRepository.save(user);
+        User savedUser =
+                userRepository.save(user);
+
+        logger.info(
+                "Profile updated for user id {}",
+                savedUser.getId()
+        );
+
+        return savedUser;
     }
 
     public User uploadProfilePicture(
@@ -196,6 +266,11 @@ public class UserService {
                     );
         }
 
+        logger.info(
+                "Profile picture updated for user id {}",
+                savedUser.getId()
+        );
+
         return savedUser;
     }
 
@@ -210,6 +285,15 @@ public class UserService {
                 request.getStatus()
         );
 
-        return userRepository.save(user);
+        User savedUser =
+                userRepository.save(user);
+
+        logger.info(
+                "User id {} status changed to {}",
+                savedUser.getId(),
+                savedUser.getStatus()
+        );
+
+        return savedUser;
     }
 }
