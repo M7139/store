@@ -12,6 +12,7 @@ import com.ga.store.exception.InformationNotFoundException;
 import com.ga.store.exception.InvalidCredentialsException;
 import com.ga.store.model.User;
 import com.ga.store.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,9 +30,7 @@ import java.util.List;
 public class UserService {
 
     private static final Logger logger =
-            LoggerFactory.getLogger(
-                    UserService.class
-            );
+            LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -56,6 +55,7 @@ public class UserService {
      * @return list of all users
      */
     public List<User> getAllUsers() {
+
         return userRepository.findAll();
     }
 
@@ -67,6 +67,7 @@ public class UserService {
      * @throws InformationNotFoundException if the user does not exist
      */
     public User getUserById(Long id) {
+
         return userRepository.findById(id)
                 .orElseThrow(() ->
                         new InformationNotFoundException(
@@ -82,7 +83,25 @@ public class UserService {
      * @throws InformationNotFoundException if the user does not exist
      */
     public User getUserByEmail(String email) {
+
         return userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "User with this email not found"
+                        ));
+    }
+
+    /**
+     * Finds and locks a user for an account update.
+     * Called by methods that already have an active transaction.
+     *
+     * @param email user email address
+     * @return locked user
+     * @throws InformationNotFoundException if the user does not exist
+     */
+    private User getUserByEmailForUpdate(String email) {
+
+        return userRepository.findByEmailForUpdate(email)
                 .orElseThrow(() ->
                         new InformationNotFoundException(
                                 "User with this email not found"
@@ -96,6 +115,7 @@ public class UserService {
      * @return true if the email already exists
      */
     public boolean emailExists(String email) {
+
         return userRepository.existsByEmail(email);
     }
 
@@ -103,11 +123,14 @@ public class UserService {
      * Registers a new customer account.
      * The password is hashed before storage and an email
      * verification token is created for the new user.
+     * The user and verification token are saved in one transaction.
+     * Verification email delivery begins after a successful commit.
      *
      * @param request registration information
      * @return newly created user
      * @throws InformationExistsException if the email is already registered
      */
+    @Transactional
     public User registerUser(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -121,10 +144,9 @@ public class UserService {
             );
         }
 
-        String passwordHash =
-                passwordEncoder.encode(
-                        request.getPassword()
-                );
+        String passwordHash = passwordEncoder.encode(
+                request.getPassword()
+        );
 
         User user = new User(
                 request.getFirstName(),
@@ -133,11 +155,11 @@ public class UserService {
                 passwordHash
         );
 
-        User savedUser =
-                userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
-        emailVerificationService
-                .createVerificationToken(savedUser);
+        emailVerificationService.createVerificationToken(
+                savedUser
+        );
 
         logger.info(
                 "User registered successfully with id {}",
@@ -159,19 +181,18 @@ public class UserService {
      */
     public User loginUser(LoginRequest request) {
 
-        User user =
-                userRepository
-                        .findByEmail(request.getEmail())
-                        .orElseThrow(() -> {
+        User user = userRepository
+                .findByEmail(request.getEmail())
+                .orElseThrow(() -> {
 
-                            logger.warn(
-                                    "Login failed because user was not found"
-                            );
+                    logger.warn(
+                            "Login failed because user was not found"
+                    );
 
-                            return new InvalidCredentialsException(
-                                    "Invalid email or password"
-                            );
-                        });
+                    return new InvalidCredentialsException(
+                            "Invalid email or password"
+                    );
+                });
 
         if (!passwordEncoder.matches(
                 request.getPassword(),
@@ -187,9 +208,7 @@ public class UserService {
             );
         }
 
-        if (user.getStatus()
-                .name()
-                .equals("INACTIVE")) {
+        if (user.getStatus().name().equals("INACTIVE")) {
 
             logger.warn(
                     "Login blocked for inactive user id {}",
@@ -225,17 +244,18 @@ public class UserService {
      * Changes the password of the currently authenticated user.
      * The current password must be correct before the new
      * password is accepted.
+     * Increasing the token version invalidates previously issued JWTs.
      *
      * @param email authenticated user's email
      * @param request current and new password information
      * @throws InvalidCredentialsException if the current password is incorrect
      */
+    @Transactional
     public void changePassword(
             String email,
             ChangePasswordRequest request) {
 
-        User user =
-                getUserByEmail(email);
+        User user = getUserByEmailForUpdate(email);
 
         if (!passwordEncoder.matches(
                 request.getCurrentPassword(),
@@ -251,13 +271,14 @@ public class UserService {
             );
         }
 
-        String newPasswordHash =
-                passwordEncoder.encode(
-                        request.getNewPassword()
-                );
+        String newPasswordHash = passwordEncoder.encode(
+                request.getNewPassword()
+        );
 
-        user.setPasswordHash(
-                newPasswordHash
+        user.setPasswordHash(newPasswordHash);
+
+        user.setTokenVersion(
+                user.getTokenVersion() + 1
         );
 
         userRepository.save(user);
@@ -271,17 +292,18 @@ public class UserService {
     /**
      * Updates the first and last name of the currently
      * authenticated user.
+     * The user is locked to avoid overwriting concurrent account changes.
      *
      * @param email authenticated user's email
      * @param request updated profile information
      * @return updated user
      */
+    @Transactional
     public User updateProfile(
             String email,
             UpdateProfileRequest request) {
 
-        User user =
-                getUserByEmail(email);
+        User user = getUserByEmailForUpdate(email);
 
         user.setFirstName(
                 request.getFirstName().trim()
@@ -291,8 +313,7 @@ public class UserService {
                 request.getLastName().trim()
         );
 
-        User savedUser =
-                userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
         logger.info(
                 "Profile updated for user id {}",
@@ -305,39 +326,44 @@ public class UserService {
     /**
      * Uploads or replaces the profile picture of the
      * currently authenticated user.
+     * The old file is deleted after a successful commit.
+     * A newly uploaded file is removed if the transaction rolls back.
      *
      * @param email authenticated user's email
      * @param file image file to upload
      * @return updated user
      */
+    @Transactional
     public User uploadProfilePicture(
             String email,
             MultipartFile file) {
 
-        User user =
-                getUserByEmail(email);
+        User user = getUserByEmailForUpdate(email);
 
         String oldProfilePicture =
                 user.getProfilePictureUrl();
 
         String profilePictureUrl =
-                imageStorageService
-                        .saveProfileImage(file);
+                imageStorageService.saveProfileImage(file);
 
-        user.setProfilePictureUrl(
-                profilePictureUrl
+        TransactionActions.afterRollback(() ->
+                imageStorageService.deleteProfileImage(
+                        profilePictureUrl
+                )
         );
 
-        User savedUser =
-                userRepository.save(user);
+        user.setProfilePictureUrl(profilePictureUrl);
+
+        User savedUser = userRepository.save(user);
 
         if (oldProfilePicture != null
                 && !oldProfilePicture.isBlank()) {
 
-            imageStorageService
-                    .deleteProfileImage(
+            TransactionActions.afterCommit(() ->
+                    imageStorageService.deleteProfileImage(
                             oldProfilePicture
-                    );
+                    )
+            );
         }
 
         logger.info(
@@ -352,24 +378,28 @@ public class UserService {
      * Updates a user's account status.
      * This operation is used by administrators to activate
      * or deactivate user accounts.
+     * The user is locked to preserve concurrent password changes.
      *
      * @param userId ID of the user being updated
      * @param request new user status
      * @return updated user
      */
+    @Transactional
     public User updateUserStatus(
             Long userId,
             UserStatusRequest request) {
 
-        User user =
-                getUserById(userId);
+        User user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "User with id "
+                                        + userId
+                                        + " not found"
+                        ));
 
-        user.setStatus(
-                request.getStatus()
-        );
+        user.setStatus(request.getStatus());
 
-        User savedUser =
-                userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
         logger.info(
                 "User id {} status changed to {}",

@@ -1,5 +1,6 @@
 package com.ga.store.security;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -7,19 +8,19 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-/**
- * Reads JWT bearer tokens from incoming requests and
- * authenticates valid, active users with Spring Security.
- */
+
 @Component
-public class JwtAuthenticationFilter extends OncePerRequestFilter {
+public class JwtAuthenticationFilter
+        extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
+
     private final CustomUserDetailsService customUserDetailsService;
 
     public JwtAuthenticationFilter(
@@ -27,19 +28,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             CustomUserDetailsService customUserDetailsService) {
 
         this.jwtUtils = jwtUtils;
-        this.customUserDetailsService =
-                customUserDetailsService;
+        this.customUserDetailsService = customUserDetailsService;
     }
 
-    /**
-     * Checks the Authorization header for a valid JWT.
-     * Valid tokens are used to populate the Spring Security context.
-     * Inactive users are not authenticated.
-     *
-     * @param request HTTP request
-     * @param response HTTP response
-     * @param filterChain remaining security filter chain
-     */
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
@@ -48,77 +40,61 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String authorizationHeader =
-                request.getHeader(
-                        "Authorization"
-                );
+                request.getHeader("Authorization");
 
         if (authorizationHeader == null
-                || !authorizationHeader.startsWith(
-                "Bearer "
-        )) {
+                || !authorizationHeader.startsWith("Bearer ")) {
 
-            filterChain.doFilter(
-                    request,
-                    response
-            );
-
+            filterChain.doFilter(request, response);
             return;
         }
 
-        String token =
-                authorizationHeader.substring(7);
+        String token = authorizationHeader.substring(7);
 
         if (!jwtUtils.validateToken(token)) {
 
-            filterChain.doFilter(
-                    request,
-                    response
-            );
-
+            filterChain.doFilter(request, response);
             return;
         }
 
-        String email =
-                jwtUtils.extractEmail(token);
+        try {
 
-        if (email != null
-                && SecurityContextHolder
-                .getContext()
-                .getAuthentication() == null) {
+            String email = jwtUtils.extractEmail(token);
 
-            UserDetails userDetails =
-                    customUserDetailsService
-                            .loadUserByUsername(
-                                    email
+            if (email != null
+                    && SecurityContextHolder.getContext()
+                    .getAuthentication() == null) {
+
+                UserDetails userDetails =
+                        customUserDetailsService
+                                .loadUserByUsername(email);
+
+                if (userDetails instanceof StoreUserDetails storeUserDetails
+                        && userDetails.isEnabled()
+                        && jwtUtils.isTokenCurrent(
+                        token,
+                        storeUserDetails.getTokenVersion()
+                )) {
+
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
                             );
 
-            if (!userDetails.isEnabled()) {
-
-                filterChain.doFilter(
-                        request,
-                        response
-                );
-
-                return;
+                    SecurityContextHolder.getContext()
+                            .setAuthentication(authentication);
+                }
             }
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
+        } catch (UsernameNotFoundException
+                 | JwtException
+                 | IllegalArgumentException exception) {
 
-            SecurityContextHolder
-                    .getContext()
-                    .setAuthentication(
-                            authentication
-                    );
+            SecurityContextHolder.clearContext();
         }
 
-        filterChain.doFilter(
-                request,
-                response
-        );
+        filterChain.doFilter(request, response);
     }
 }

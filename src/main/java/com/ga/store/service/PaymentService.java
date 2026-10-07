@@ -11,6 +11,7 @@ import com.ga.store.model.Payment;
 import com.ga.store.model.User;
 import com.ga.store.repository.OrderRepository;
 import com.ga.store.repository.PaymentRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -38,37 +39,36 @@ public class PaymentService {
 
     /**
      * Creates a payment for a pending order belonging to a customer.
+     * The order remains locked until the transaction completes,
+     * preventing its status from changing during payment creation.
      *
      * @param email authenticated customer's email
      * @param orderId order ID
      * @param request payment method information
      * @return created payment
      */
+    @Transactional
     public PaymentResponse createPayment(
             String email,
             Long orderId,
             PaymentRequest request) {
 
-        User user =
-                userService.getUserByEmail(email);
+        User user = userService.getUserByEmail(email);
 
-        Order order =
-                orderRepository.findById(orderId)
-                        .orElseThrow(() ->
-                                new InformationNotFoundException(
-                                        "Order not found"
-                                ));
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "Order not found"
+                        ));
 
-        if (!order.getUser().getId()
-                .equals(user.getId())) {
+        if (!order.getUser().getId().equals(user.getId())) {
 
             throw new InformationNotFoundException(
                     "Order not found"
             );
         }
 
-        if (order.getStatus()
-                != OrderStatus.PENDING) {
+        if (order.getStatus() != OrderStatus.PENDING) {
 
             throw new InformationExistsException(
                     "Payment can only be added to a pending order"
@@ -82,20 +82,17 @@ public class PaymentService {
             );
         }
 
-        Payment payment =
-                new Payment(
-                        order,
-                        user,
-                        order.getTotalAmount(),
-                        request.getPaymentMethod()
-                );
+        Payment payment = new Payment(
+                order,
+                user,
+                order.getTotalAmount(),
+                request.getPaymentMethod()
+        );
 
         Payment savedPayment =
                 paymentRepository.save(payment);
 
-        return createPaymentResponse(
-                savedPayment
-        );
+        return createPaymentResponse(savedPayment);
     }
 
     /**
@@ -109,34 +106,28 @@ public class PaymentService {
             String email,
             Long orderId) {
 
-        User user =
-                userService.getUserByEmail(email);
+        User user = userService.getUserByEmail(email);
 
-        Order order =
-                orderRepository.findById(orderId)
-                        .orElseThrow(() ->
-                                new InformationNotFoundException(
-                                        "Order not found"
-                                ));
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "Order not found"
+                        ));
 
-        if (!order.getUser().getId()
-                .equals(user.getId())) {
+        if (!order.getUser().getId().equals(user.getId())) {
 
             throw new InformationNotFoundException(
                     "Order not found"
             );
         }
 
-        Payment payment =
-                paymentRepository.findByOrder(order)
-                        .orElseThrow(() ->
-                                new InformationNotFoundException(
-                                        "Payment not found"
-                                ));
+        Payment payment = paymentRepository.findByOrder(order)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "Payment not found"
+                        ));
 
-        return createPaymentResponse(
-                payment
-        );
+        return createPaymentResponse(payment);
     }
 
     /**
@@ -148,8 +139,7 @@ public class PaymentService {
     public List<PaymentResponse> getPaymentsByUser(
             String email) {
 
-        User user =
-                userService.getUserByEmail(email);
+        User user = userService.getUserByEmail(email);
 
         return paymentRepository
                 .findByUserOrderByCreatedAtDesc(user)
@@ -172,31 +162,51 @@ public class PaymentService {
     }
 
     /**
+     * Checks that an order has a pending payment before confirmation.
+     * This method is called while the order is locked by the
+     * order status update transaction.
+     *
+     * @param order order being confirmed
+     * @throws InformationExistsException if the payment is missing
+     *                                    or is not pending
+     */
+    public void requirePendingPayment(Order order) {
+
+        Payment payment = paymentRepository.findByOrder(order)
+                .orElseThrow(() ->
+                        new InformationExistsException(
+                                "Add a payment method before confirming the order"
+                        ));
+
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+
+            throw new InformationExistsException(
+                    "Order requires a pending payment"
+            );
+        }
+    }
+
+    /**
      * Marks a pending payment as paid when the order is delivered.
      *
      * @param order delivered order
      */
-    public void markPaymentAsPaid(
-            Order order) {
+    public void markPaymentAsPaid(Order order) {
 
-        Payment payment =
-                paymentRepository.findByOrder(order)
-                        .orElseThrow(() ->
-                                new InformationNotFoundException(
-                                        "Payment not found"
-                                ));
+        Payment payment = paymentRepository.findByOrder(order)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "Payment not found"
+                        ));
 
-        if (payment.getStatus()
-                != PaymentStatus.PENDING) {
+        if (payment.getStatus() != PaymentStatus.PENDING) {
 
             throw new InformationExistsException(
                     "Payment cannot be marked as paid"
             );
         }
 
-        payment.setStatus(
-                PaymentStatus.PAID
-        );
+        payment.setStatus(PaymentStatus.PAID);
 
         paymentRepository.save(payment);
     }
@@ -206,8 +216,7 @@ public class PaymentService {
      *
      * @param order cancelled order
      */
-    public void cancelPayment(
-            Order order) {
+    public void cancelPayment(Order order) {
 
         Optional<Payment> optionalPayment =
                 paymentRepository.findByOrder(order);
@@ -216,15 +225,11 @@ public class PaymentService {
             return;
         }
 
-        Payment payment =
-                optionalPayment.get();
+        Payment payment = optionalPayment.get();
 
-        if (payment.getStatus()
-                == PaymentStatus.PENDING) {
+        if (payment.getStatus() == PaymentStatus.PENDING) {
 
-            payment.setStatus(
-                    PaymentStatus.CANCELLED
-            );
+            payment.setStatus(PaymentStatus.CANCELLED);
 
             paymentRepository.save(payment);
         }

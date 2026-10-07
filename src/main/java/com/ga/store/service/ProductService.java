@@ -6,6 +6,7 @@ import com.ga.store.exception.InformationNotFoundException;
 import com.ga.store.model.Category;
 import com.ga.store.model.Product;
 import com.ga.store.repository.ProductRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +43,7 @@ public class ProductService {
      * @return all products
      */
     public List<Product> getAllProducts() {
+
         return productRepository.findAll();
     }
 
@@ -51,6 +53,7 @@ public class ProductService {
      * @return active products
      */
     public List<Product> getActiveProducts() {
+
         return productRepository.findByActiveTrue();
     }
 
@@ -73,18 +76,21 @@ public class ProductService {
             String sort) {
 
         if (page < 0) {
+
             throw new InformationExistsException(
                     "Page cannot be negative"
             );
         }
 
         if (size <= 0) {
+
             throw new InformationExistsException(
                     "Page size must be greater than 0"
             );
         }
 
         if (categoryId != null) {
+
             categoryService.getCategoryById(
                     categoryId
             );
@@ -92,27 +98,21 @@ public class ProductService {
 
         String searchValue = null;
 
-        if (search != null
-                && !search.isBlank()) {
+        if (search != null && !search.isBlank()) {
 
-            searchValue =
-                    search.trim();
+            searchValue = search.trim();
         }
 
-        String sortField =
-                "name";
+        String sortField = "name";
 
         Sort.Direction sortDirection =
                 Sort.Direction.ASC;
 
-        if (sort != null
-                && !sort.isBlank()) {
+        if (sort != null && !sort.isBlank()) {
 
-            String[] sortParts =
-                    sort.split(",");
+            String[] sortParts = sort.split(",");
 
-            sortField =
-                    sortParts[0].trim();
+            sortField = sortParts[0].trim();
 
             if (!sortField.equals("name")
                     && !sortField.equals("price")
@@ -125,18 +125,15 @@ public class ProductService {
 
             if (sortParts.length > 1) {
 
-                String direction =
-                        sortParts[1].trim();
+                String direction = sortParts[1].trim();
 
                 if (direction.equalsIgnoreCase("desc")) {
 
-                    sortDirection =
-                            Sort.Direction.DESC;
+                    sortDirection = Sort.Direction.DESC;
 
                 } else if (direction.equalsIgnoreCase("asc")) {
 
-                    sortDirection =
-                            Sort.Direction.ASC;
+                    sortDirection = Sort.Direction.ASC;
 
                 } else {
 
@@ -147,22 +144,20 @@ public class ProductService {
             }
         }
 
-        Pageable pageable =
-                PageRequest.of(
-                        page,
-                        size,
-                        Sort.by(
-                                sortDirection,
-                                sortField
-                        )
-                );
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(
+                        sortDirection,
+                        sortField
+                )
+        );
 
-        return productRepository
-                .searchActiveProducts(
-                        searchValue,
-                        categoryId,
-                        pageable
-                );
+        return productRepository.searchActiveProducts(
+                searchValue,
+                categoryId,
+                pageable
+        );
     }
 
     /**
@@ -172,6 +167,7 @@ public class ProductService {
      * @return matching product
      */
     public Product getProductById(Long id) {
+
         return productRepository.findById(id)
                 .orElseThrow(() ->
                         new InformationNotFoundException(
@@ -188,6 +184,7 @@ public class ProductService {
      * @return active product
      */
     public Product getActiveProductById(Long id) {
+
         return productRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() ->
                         new InformationNotFoundException(
@@ -206,10 +203,9 @@ public class ProductService {
     public Optional<Product> getProductByName(
             String name) {
 
-        return productRepository
-                .findByNameIgnoreCase(
-                        name.trim()
-                );
+        return productRepository.findByNameIgnoreCase(
+                name.trim()
+        );
     }
 
     /**
@@ -221,10 +217,9 @@ public class ProductService {
     public List<Product> getProductsByCategoryId(
             Long categoryId) {
 
-        return productRepository
-                .findByCategoryId(
-                        categoryId
-                );
+        return productRepository.findByCategoryId(
+                categoryId
+        );
     }
 
     /**
@@ -236,14 +231,10 @@ public class ProductService {
     public List<Product> getActiveProductsByCategoryId(
             Long categoryId) {
 
-        categoryService.getCategoryById(
-                categoryId
-        );
+        categoryService.getCategoryById(categoryId);
 
         return productRepository
-                .findByCategoryIdAndActiveTrue(
-                        categoryId
-                );
+                .findByCategoryIdAndActiveTrue(categoryId);
     }
 
     /**
@@ -252,13 +243,11 @@ public class ProductService {
      * @param name product name
      * @return true if the product exists
      */
-    public boolean productExists(
-            String name) {
+    public boolean productExists(String name) {
 
-        return productRepository
-                .existsByNameIgnoreCase(
-                        name.trim()
-                );
+        return productRepository.existsByNameIgnoreCase(
+                name.trim()
+        );
     }
 
     /**
@@ -270,13 +259,10 @@ public class ProductService {
     public Product createProduct(
             ProductRequest request) {
 
-        String productName =
-                request.getName().trim();
+        String productName = request.getName().trim();
 
-        if (productRepository
-                .existsByNameIgnoreCase(
-                        productName
-                )) {
+        if (productRepository.existsByNameIgnoreCase(
+                productName)) {
 
             throw new InformationExistsException(
                     "Product with this name already exists"
@@ -288,18 +274,15 @@ public class ProductService {
                         request.getCategoryId()
                 );
 
-        Product product =
-                new Product(
-                        productName,
-                        request.getDescription(),
-                        request.getPrice(),
-                        request.getStockQuantity(),
-                        category
-                );
-
-        return productRepository.save(
-                product
+        Product product = new Product(
+                productName,
+                request.getDescription(),
+                request.getPrice(),
+                request.getStockQuantity(),
+                category
         );
+
+        return productRepository.save(product);
     }
 
     /**
@@ -313,23 +296,17 @@ public class ProductService {
             Long id,
             ProductRequest request) {
 
-        Product product =
-                getProductById(id);
+        Product product = getProductById(id);
 
-        String productName =
-                request.getName().trim();
+        String productName = request.getName().trim();
 
         Optional<Product> existingProduct =
-                productRepository
-                        .findByNameIgnoreCase(
-                                productName
-                        );
+                productRepository.findByNameIgnoreCase(
+                        productName
+                );
 
         if (existingProduct.isPresent()
-                && !existingProduct
-                .get()
-                .getId()
-                .equals(id)) {
+                && !existingProduct.get().getId().equals(id)) {
 
             throw new InformationExistsException(
                     "Product with this name already exists"
@@ -341,9 +318,7 @@ public class ProductService {
                         request.getCategoryId()
                 );
 
-        product.setName(
-                productName
-        );
+        product.setName(productName);
 
         product.setDescription(
                 request.getDescription()
@@ -357,34 +332,40 @@ public class ProductService {
                 request.getStockQuantity()
         );
 
-        product.setCategory(
-                category
-        );
+        product.setCategory(category);
 
-        return productRepository.save(
-                product
-        );
+        return productRepository.save(product);
     }
 
     /**
-     * Deletes a product and its associated uploaded images.
+     * Deletes a product and its associated image records
+     * within one database transaction.
+     * The product is locked during deletion.
+     * Database constraints are checked before the transaction completes,
+     * and physical image files are deleted only after a successful commit.
+     * Products referenced by carts, orders or reviews should be
+     * deactivated instead of deleted.
      *
      * @param id product ID
      */
-    public void deleteProduct(
-            Long id) {
+    @Transactional
+    public void deleteProduct(Long id) {
 
-        Product product =
-                getProductById(id);
+        Product product = productRepository
+                .findByIdForUpdate(id)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "Product with id "
+                                        + id
+                                        + " not found"
+                        ));
 
-        productImageService
-                .deleteImagesByProductId(
-                        id
-                );
+        productImageService.deleteImagesByProductId(id);
 
-        productRepository.delete(
-                product
-        );
+        productRepository.delete(product);
+
+        // Check constraints before physical image deletion is allowed.
+        productRepository.flush();
     }
 
     /**
@@ -398,15 +379,10 @@ public class ProductService {
             Long id,
             boolean active) {
 
-        Product product =
-                getProductById(id);
+        Product product = getProductById(id);
 
-        product.setActive(
-                active
-        );
+        product.setActive(active);
 
-        return productRepository.save(
-                product
-        );
+        return productRepository.save(product);
     }
 }

@@ -6,6 +6,7 @@ import com.ga.store.model.EmailVerificationToken;
 import com.ga.store.model.User;
 import com.ga.store.repository.EmailVerificationTokenRepository;
 import com.ga.store.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -13,6 +14,7 @@ import java.util.UUID;
 
 /**
  * Handles email verification tokens and account verification.
+ * Verification and token updates are performed transactionally.
  */
 @Service
 public class EmailVerificationService {
@@ -32,27 +34,51 @@ public class EmailVerificationService {
     }
 
     /**
-     * Creates a verification token that expires after 24 hours
-     * and sends it to the user.
+     * Creates a verification token that expires after 24 hours.
+     * An existing token record is updated instead of creating
+     * another record for the same user.
+     * Email delivery begins after the transaction commits.
      *
      * @param user user requiring verification
      * @return saved verification token
      */
+    @Transactional
     public EmailVerificationToken createVerificationToken(User user) {
+
+        user = userRepository.findByEmailForUpdate(
+                user.getEmail()
+        ).orElseThrow(() ->
+                new InformationNotFoundException(
+                        "User with this email not found"
+                ));
 
         String token = UUID.randomUUID().toString();
 
-        LocalDateTime expiresAt = LocalDateTime.now().plusHours(24);
+        LocalDateTime expiresAt =
+                LocalDateTime.now().plusHours(24);
 
         EmailVerificationToken verificationToken =
-                new EmailVerificationToken(
-                        token,
-                        user,
-                        expiresAt
-                );
+                emailVerificationTokenRepository.findByUser(user)
+                        .orElse(null);
+
+        if (verificationToken == null) {
+
+            verificationToken = new EmailVerificationToken(
+                    token,
+                    user,
+                    expiresAt
+            );
+
+        } else {
+
+            verificationToken.setToken(token);
+            verificationToken.setExpiresAt(expiresAt);
+        }
 
         EmailVerificationToken savedToken =
-                emailVerificationTokenRepository.save(verificationToken);
+                emailVerificationTokenRepository.save(
+                        verificationToken
+                );
 
         emailService.sendVerificationEmail(
                 user.getEmail(),
@@ -63,11 +89,42 @@ public class EmailVerificationService {
     }
 
     /**
+     * Sends a replacement verification email for an unverified account.
+     * Missing and already verified accounts do not trigger an email.
+     * Replacing the token invalidates the previous verification link.
+     *
+     * @param email account email
+     */
+    @Transactional
+    public void resendVerification(String email) {
+
+        userRepository.findByEmailForUpdate(email)
+                .filter(user -> !user.isVerified())
+                .ifPresent(this::createVerificationToken);
+    }
+
+    /**
      * Verifies a user's email using a valid verification token.
+     * The account is locked before validating the token.
+     * Account verification and token deletion happen in one transaction.
      *
      * @param token verification token
      */
+    @Transactional
     public void verifyEmail(String token) {
+
+        String email = emailVerificationTokenRepository
+                .findEmailByToken(token)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "Verification token not found"
+                        ));
+
+        User user = userRepository.findByEmailForUpdate(email)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "User with this email not found"
+                        ));
 
         EmailVerificationToken verificationToken =
                 emailVerificationTokenRepository.findByToken(token)
@@ -76,18 +133,20 @@ public class EmailVerificationService {
                                         "Verification token not found"
                                 ));
 
-        if (verificationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+        if (!verificationToken.getExpiresAt().isAfter(
+                LocalDateTime.now())) {
+
             throw new VerificationTokenExpiredException(
                     "Verification token has expired"
             );
         }
 
-        User user = verificationToken.getUser();
-
         user.setVerified(true);
 
         userRepository.save(user);
 
-        emailVerificationTokenRepository.delete(verificationToken);
+        emailVerificationTokenRepository.delete(
+                verificationToken
+        );
     }
 }

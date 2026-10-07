@@ -10,6 +10,14 @@ import java.time.LocalDateTime;
 public class Product {
 
     @Id
+
+    @Version
+    @Column(
+            nullable = false,
+            columnDefinition = "bigint default 0"
+    )
+    private long version;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 

@@ -6,6 +6,7 @@ import com.ga.store.model.PasswordResetToken;
 import com.ga.store.model.User;
 import com.ga.store.repository.PasswordResetTokenRepository;
 import com.ga.store.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,8 @@ import java.util.UUID;
 /**
  * Handles password reset token creation, email delivery
  * and password replacement.
+ * Password replacement, JWT invalidation and reset token removal
+ * happen within one database transaction.
  */
 @Service
 public class PasswordResetService {
@@ -37,20 +40,23 @@ public class PasswordResetService {
     }
 
     /**
-     * Creates and emails a password reset token for a user.
+     * Creates a password reset token and schedules email delivery
+     * after the database transaction commits.
      *
      * @param email account email
      * @return created reset token
      */
+    @Transactional
     public PasswordResetToken requestPasswordReset(String email) {
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailForUpdate(email)
                 .orElseThrow(() ->
                         new InformationNotFoundException(
                                 "User with this email not found"
                         ));
 
-        PasswordResetToken resetToken = createPasswordResetToken(user);
+        PasswordResetToken resetToken =
+                createPasswordResetToken(user);
 
         emailService.sendPasswordResetEmail(
                 user.getEmail(),
@@ -62,37 +68,74 @@ public class PasswordResetService {
 
     /**
      * Creates a one-hour password reset token.
-     * Any previous token for the user is removed.
+     * If a token record already exists, its value and expiration
+     * are replaced so the previous reset link no longer works.
      *
      * @param user user requesting reset
-     * @return created reset token
+     * @return created or updated reset token
      */
+    @Transactional
     public PasswordResetToken createPasswordResetToken(User user) {
 
-        passwordResetTokenRepository.findByUser(user)
-                .ifPresent(passwordResetTokenRepository::delete);
+        user = userRepository.findByEmailForUpdate(
+                user.getEmail()
+        ).orElseThrow(() ->
+                new InformationNotFoundException(
+                        "User with this email not found"
+                ));
 
         String token = UUID.randomUUID().toString();
 
-        LocalDateTime expiresAt = LocalDateTime.now().plusHours(1);
+        LocalDateTime expiresAt =
+                LocalDateTime.now().plusHours(1);
 
         PasswordResetToken resetToken =
-                new PasswordResetToken(
-                        token,
-                        user,
-                        expiresAt
-                );
+                passwordResetTokenRepository.findByUser(user)
+                        .orElse(null);
+
+        if (resetToken == null) {
+
+            resetToken = new PasswordResetToken(
+                    token,
+                    user,
+                    expiresAt
+            );
+
+        } else {
+
+            resetToken.setToken(token);
+            resetToken.setExpiresAt(expiresAt);
+        }
 
         return passwordResetTokenRepository.save(resetToken);
     }
 
     /**
      * Replaces a user's password using a valid reset token.
+     * The account is locked before validating the token.
+     * Increasing the token version invalidates existing JWTs.
+     * The reset token is deleted in the same transaction.
      *
      * @param token password reset token
      * @param newPassword new password
      */
-    public void resetPassword(String token, String newPassword) {
+    @Transactional
+    public void resetPassword(
+            String token,
+            String newPassword) {
+
+        String email = passwordResetTokenRepository
+                .findEmailByToken(token)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "Password reset token not found"
+                        ));
+
+        User user = userRepository.findByEmailForUpdate(email)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "User with this email not found"
+                        ));
 
         PasswordResetToken resetToken =
                 passwordResetTokenRepository.findByToken(token)
@@ -101,17 +144,22 @@ public class PasswordResetService {
                                         "Password reset token not found"
                                 ));
 
-        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+        if (!resetToken.getExpiresAt().isAfter(
+                LocalDateTime.now())) {
+
             throw new VerificationTokenExpiredException(
                     "Password reset token has expired"
             );
         }
 
-        User user = resetToken.getUser();
-
-        String hashedPassword = passwordEncoder.encode(newPassword);
+        String hashedPassword =
+                passwordEncoder.encode(newPassword);
 
         user.setPasswordHash(hashedPassword);
+
+        user.setTokenVersion(
+                user.getTokenVersion() + 1
+        );
 
         userRepository.save(user);
 

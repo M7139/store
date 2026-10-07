@@ -9,9 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Handles real-time order status notifications using Server-Sent Events.
+ * Notifications are sent only after the corresponding database
+ * transaction commits successfully.
  */
 @Service
 public class OrderNotificationService {
@@ -21,50 +24,85 @@ public class OrderNotificationService {
 
     /**
      * Creates an SSE connection for a user.
+     * Connection lists support concurrent subscriptions,
+     * disconnections and notification delivery.
      *
      * @param email authenticated user's email
      * @return SSE emitter connection
      */
     public SseEmitter subscribe(String email) {
 
-        SseEmitter emitter =
-                new SseEmitter(0L);
+        SseEmitter emitter = new SseEmitter(0L);
 
-        emitters.computeIfAbsent(
-                email,
-                key -> new ArrayList<>()
-        ).add(emitter);
+        emitters.compute(email, (key, existing) -> {
+
+            List<SseEmitter> userEmitters =
+                    existing == null
+                            ? new CopyOnWriteArrayList<>()
+                            : existing;
+
+            userEmitters.add(emitter);
+
+            return userEmitters;
+        });
 
         emitter.onCompletion(() ->
                 removeEmitter(
                         email,
                         emitter
-                ));
+                )
+        );
 
         emitter.onTimeout(() ->
                 removeEmitter(
                         email,
                         emitter
-                ));
+                )
+        );
 
         emitter.onError(error ->
                 removeEmitter(
                         email,
                         emitter
-                ));
+                )
+        );
 
         return emitter;
     }
 
     /**
-     * Sends an order status event to all active SSE
-     * connections belonging to a user.
+     * Schedules an order status event for the user's active connections.
+     * The event is sent after the current database transaction commits.
+     * If no transaction is active, delivery is attempted immediately.
      *
      * @param email customer email
      * @param orderId order ID
      * @param status new order status
      */
     public void sendOrderStatusUpdate(
+            String email,
+            Long orderId,
+            OrderStatus status) {
+
+        TransactionActions.afterCommit(() ->
+                sendCommittedUpdate(
+                        email,
+                        orderId,
+                        status
+                )
+        );
+    }
+
+    /**
+     * Sends a committed order status to all active connections
+     * belonging to the customer.
+     * Failed or closed connections are removed.
+     *
+     * @param email customer email
+     * @param orderId order ID
+     * @param status committed order status
+     */
+    private void sendCommittedUpdate(
             String email,
             Long orderId,
             OrderStatus status) {
@@ -85,9 +123,7 @@ public class OrderNotificationService {
 
                 emitter.send(
                         SseEmitter.event()
-                                .name(
-                                        "order-status"
-                                )
+                                .name("order-status")
                                 .data(
                                         "Order #"
                                                 + orderId
@@ -96,21 +132,24 @@ public class OrderNotificationService {
                                 )
                 );
 
-            } catch (IOException exception) {
+            } catch (IOException | IllegalStateException exception) {
 
-                failedEmitters.add(
-                        emitter
-                );
+                failedEmitters.add(emitter);
             }
         }
 
-        userEmitters.removeAll(
-                failedEmitters
+        failedEmitters.forEach(emitter ->
+                removeEmitter(
+                        email,
+                        emitter
+                )
         );
     }
 
     /**
      * Removes a closed or failed SSE connection.
+     * The user's entry is removed when no connections remain.
+     * Removal is coordinated with concurrent subscriptions.
      *
      * @param email customer email
      * @param emitter SSE connection
@@ -119,21 +158,13 @@ public class OrderNotificationService {
             String email,
             SseEmitter emitter) {
 
-        List<SseEmitter> userEmitters =
-                emitters.get(email);
+        emitters.computeIfPresent(email, (key, userEmitters) -> {
 
-        if (userEmitters == null) {
-            return;
-        }
+            userEmitters.remove(emitter);
 
-        userEmitters.remove(
-                emitter
-        );
-
-        if (userEmitters.isEmpty()) {
-            emitters.remove(
-                    email
-            );
-        }
+            return userEmitters.isEmpty()
+                    ? null
+                    : userEmitters;
+        });
     }
 }

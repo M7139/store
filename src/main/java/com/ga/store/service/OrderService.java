@@ -30,9 +30,7 @@ import java.util.Map;
 public class OrderService {
 
     private static final Logger logger =
-            LoggerFactory.getLogger(
-                    OrderService.class
-            );
+            LoggerFactory.getLogger(OrderService.class);
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -80,14 +78,12 @@ public class OrderService {
     @Transactional
     public OrderResponse checkout(String email) {
 
-        User user =
-                userService.getUserByEmail(email);
+        User user = userService.getUserByEmail(email);
 
         Address address =
                 addressService.getAddressByUser(email);
 
-        Cart cart =
-                cartService.getOrCreateCart(email);
+        Cart cart = cartService.getOrCreateCart(email);
 
         List<CartItem> cartItems =
                 cartItemRepository.findByCart(cart);
@@ -109,29 +105,25 @@ public class OrderService {
                         firstItem.getProduct()
                                 .getId()
                                 .compareTo(
-                                        secondItem
-                                                .getProduct()
-                                                .getId()
+                                        secondItem.getProduct().getId()
                                 )
         );
 
         Map<Long, Product> lockedProducts =
                 new HashMap<>();
 
-        BigDecimal totalAmount =
-                BigDecimal.ZERO;
+        BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (CartItem cartItem : cartItems) {
 
-            Product product =
-                    productRepository
-                            .findByIdForUpdate(
-                                    cartItem.getProduct().getId()
-                            )
-                            .orElseThrow(() ->
-                                    new InformationNotFoundException(
-                                            "Product not found"
-                                    ));
+            Product product = productRepository
+                    .findByIdForUpdate(
+                            cartItem.getProduct().getId()
+                    )
+                    .orElseThrow(() ->
+                            new InformationNotFoundException(
+                                    "Product not found"
+                            ));
 
             lockedProducts.put(
                     product.getId(),
@@ -167,16 +159,14 @@ public class OrderService {
                 );
             }
 
-            BigDecimal subtotal =
-                    product.getPrice()
-                            .multiply(
-                                    BigDecimal.valueOf(
-                                            cartItem.getQuantity()
-                                    )
-                            );
+            BigDecimal subtotal = product.getPrice()
+                    .multiply(
+                            BigDecimal.valueOf(
+                                    cartItem.getQuantity()
+                            )
+                    );
 
-            totalAmount =
-                    totalAmount.add(subtotal);
+            totalAmount = totalAmount.add(subtotal);
         }
 
         Order order = new Order(
@@ -189,36 +179,32 @@ public class OrderService {
                 address.getPhoneNumber()
         );
 
-        Order savedOrder =
-                orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
 
         List<OrderItemResponse> itemResponses =
                 new ArrayList<>();
 
         for (CartItem cartItem : cartItems) {
 
-            Product product =
-                    lockedProducts.get(
-                            cartItem.getProduct().getId()
+            Product product = lockedProducts.get(
+                    cartItem.getProduct().getId()
+            );
+
+            BigDecimal subtotal = product.getPrice()
+                    .multiply(
+                            BigDecimal.valueOf(
+                                    cartItem.getQuantity()
+                            )
                     );
 
-            BigDecimal subtotal =
-                    product.getPrice()
-                            .multiply(
-                                    BigDecimal.valueOf(
-                                            cartItem.getQuantity()
-                                    )
-                            );
-
-            OrderItem orderItem =
-                    new OrderItem(
-                            savedOrder,
-                            product,
-                            product.getName(),
-                            product.getPrice(),
-                            cartItem.getQuantity(),
-                            subtotal
-                    );
+            OrderItem orderItem = new OrderItem(
+                    savedOrder,
+                    product,
+                    product.getName(),
+                    product.getPrice(),
+                    cartItem.getQuantity(),
+                    subtotal
+            );
 
             OrderItem savedOrderItem =
                     orderItemRepository.save(orderItem);
@@ -274,12 +260,10 @@ public class OrderService {
     public List<OrderResponse> getOrdersByUser(
             String email) {
 
-        User user =
-                userService.getUserByEmail(email);
+        User user = userService.getUserByEmail(email);
 
-        List<Order> orders =
-                orderRepository
-                        .findByUserOrderByCreatedAtDesc(user);
+        List<Order> orders = orderRepository
+                .findByUserOrderByCreatedAtDesc(user);
 
         return orders.stream()
                 .map(this::createOrderResponse)
@@ -297,18 +281,15 @@ public class OrderService {
             String email,
             Long orderId) {
 
-        User user =
-                userService.getUserByEmail(email);
+        User user = userService.getUserByEmail(email);
 
-        Order order =
-                orderRepository.findById(orderId)
-                        .orElseThrow(() ->
-                                new InformationNotFoundException(
-                                        "Order not found"
-                                ));
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "Order not found"
+                        ));
 
-        if (!order.getUser().getId()
-                .equals(user.getId())) {
+        if (!order.getUser().getId().equals(user.getId())) {
 
             throw new InformationNotFoundException(
                     "Order not found"
@@ -321,6 +302,7 @@ public class OrderService {
     /**
      * Cancels a customer's pending or confirmed order
      * and restores its allocated stock.
+     * The order remains locked until the transaction completes.
      *
      * @param email authenticated customer's email
      * @param orderId order ID
@@ -331,18 +313,15 @@ public class OrderService {
             String email,
             Long orderId) {
 
-        User user =
-                userService.getUserByEmail(email);
+        User user = userService.getUserByEmail(email);
 
-        Order order =
-                orderRepository.findById(orderId)
-                        .orElseThrow(() ->
-                                new InformationNotFoundException(
-                                        "Order not found"
-                                ));
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "Order not found"
+                        ));
 
-        if (!order.getUser().getId()
-                .equals(user.getId())) {
+        if (!order.getUser().getId().equals(user.getId())) {
 
             logger.warn(
                     "User id {} attempted to cancel order id {} owned by another user",
@@ -373,12 +352,9 @@ public class OrderService {
 
         order.setStatus(OrderStatus.CANCELLED);
 
-        Order savedOrder =
-                orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
 
-        paymentService.cancelPayment(
-                savedOrder
-        );
+        paymentService.cancelPayment(savedOrder);
 
         emailService.sendOrderCancelledEmail(
                 savedOrder.getUser().getEmail(),
@@ -415,6 +391,8 @@ public class OrderService {
 
     /**
      * Changes an order's status according to the permitted workflow.
+     * A pending payment must exist before the order can be confirmed.
+     * The order remains locked until the transaction completes.
      * Appropriate email, payment and real-time notification actions
      * are also performed.
      *
@@ -427,32 +405,34 @@ public class OrderService {
             Long orderId,
             OrderStatusRequest request) {
 
-        Order order =
-                orderRepository.findById(orderId)
-                        .orElseThrow(() ->
-                                new InformationNotFoundException(
-                                        "Order not found"
-                                ));
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() ->
+                        new InformationNotFoundException(
+                                "Order not found"
+                        ));
 
-        OrderStatus currentStatus =
-                order.getStatus();
+        OrderStatus currentStatus = order.getStatus();
 
-        OrderStatus newStatus =
-                request.getStatus();
+        OrderStatus newStatus = request.getStatus();
 
         validateStatusTransition(
                 currentStatus,
                 newStatus
         );
 
+        if (newStatus == OrderStatus.CONFIRMED) {
+
+            paymentService.requirePendingPayment(order);
+        }
+
         if (newStatus == OrderStatus.CANCELLED) {
+
             restoreOrderStock(order);
         }
 
         order.setStatus(newStatus);
 
-        Order savedOrder =
-                orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
 
         if (newStatus == OrderStatus.CONFIRMED) {
 
@@ -464,9 +444,7 @@ public class OrderService {
 
         if (newStatus == OrderStatus.CANCELLED) {
 
-            paymentService.cancelPayment(
-                    savedOrder
-            );
+            paymentService.cancelPayment(savedOrder);
 
             emailService.sendOrderCancelledEmail(
                     savedOrder.getUser().getEmail(),
@@ -476,9 +454,7 @@ public class OrderService {
 
         if (newStatus == OrderStatus.DELIVERED) {
 
-            paymentService.markPaymentAsPaid(
-                    savedOrder
-            );
+            paymentService.markPaymentAsPaid(savedOrder);
 
             emailService.sendOrderDeliveredEmail(
                     savedOrder.getUser().getEmail(),
@@ -554,23 +530,21 @@ public class OrderService {
      *
      * @param order cancelled order
      */
-    private void restoreOrderStock(
-            Order order) {
+    private void restoreOrderStock(Order order) {
 
         List<OrderItem> orderItems =
                 orderItemRepository.findByOrder(order);
 
         for (OrderItem orderItem : orderItems) {
 
-            Product product =
-                    productRepository
-                            .findByIdForUpdate(
-                                    orderItem.getProduct().getId()
-                            )
-                            .orElseThrow(() ->
-                                    new InformationNotFoundException(
-                                            "Product not found"
-                                    ));
+            Product product = productRepository
+                    .findByIdForUpdate(
+                            orderItem.getProduct().getId()
+                    )
+                    .orElseThrow(() ->
+                            new InformationNotFoundException(
+                                    "Product not found"
+                            ));
 
             product.setStockQuantity(
                     product.getStockQuantity()
@@ -592,12 +566,10 @@ public class OrderService {
      * @param order order entity
      * @return order response
      */
-    private OrderResponse createOrderResponse(
-            Order order) {
+    private OrderResponse createOrderResponse(Order order) {
 
         List<OrderItemResponse> itemResponses =
-                orderItemRepository
-                        .findByOrder(order)
+                orderItemRepository.findByOrder(order)
                         .stream()
                         .map(orderItem ->
                                 new OrderItemResponse(

@@ -23,6 +23,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Provides registration, login, email verification
+ * and password recovery endpoints.
+ */
 @RestController
 @RequestMapping("/api/auth")
 @Tag(
@@ -52,10 +56,17 @@ public class AuthController {
         this.rateLimitService = rateLimitService;
     }
 
+    /**
+     * Registers a customer and schedules verification email delivery.
+     *
+     * @param httpRequest HTTP request used for rate limiting
+     * @param request registration information
+     * @return created user
+     */
     @PostMapping("/register")
     @Operation(
             summary = "Register a new customer",
-            description = "Creates a new customer account and sends an email verification link."
+            description = "Creates a new customer account and schedules an email verification link."
     )
     @ApiResponses({
             @ApiResponse(
@@ -79,8 +90,7 @@ public class AuthController {
             HttpServletRequest httpRequest,
             @Valid @RequestBody RegisterRequest request) {
 
-        String ipAddress =
-                httpRequest.getRemoteAddr();
+        String ipAddress = httpRequest.getRemoteAddr();
 
         rateLimitService.checkLimit(
                 "register:" + ipAddress,
@@ -88,22 +98,18 @@ public class AuthController {
                 10
         );
 
-        User user =
-                userService.registerUser(
-                        request
-                );
+        User user = userService.registerUser(request);
 
-        UserResponse response =
-                new UserResponse(
-                        user.getId(),
-                        user.getFirstName(),
-                        user.getLastName(),
-                        user.getEmail(),
-                        user.getRole(),
-                        user.getStatus(),
-                        user.isVerified(),
-                        user.getProfilePictureUrl()
-                );
+        UserResponse response = new UserResponse(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getRole(),
+                user.getStatus(),
+                user.isVerified(),
+                user.getProfilePictureUrl()
+        );
 
         return new ResponseEntity<>(
                 response,
@@ -111,6 +117,14 @@ public class AuthController {
         );
     }
 
+    /**
+     * Authenticates a user and issues a JWT containing
+     * the token version from the authenticated account.
+     *
+     * @param httpRequest HTTP request used for rate limiting
+     * @param request login credentials
+     * @return JWT and user information
+     */
     @PostMapping("/login")
     @Operation(
             summary = "Login",
@@ -142,8 +156,7 @@ public class AuthController {
             HttpServletRequest httpRequest,
             @Valid @RequestBody LoginRequest request) {
 
-        String ipAddress =
-                httpRequest.getRemoteAddr();
+        String ipAddress = httpRequest.getRemoteAddr();
 
         rateLimitService.checkLimit(
                 "login:" + ipAddress,
@@ -151,33 +164,28 @@ public class AuthController {
                 1
         );
 
-        User user =
-                userService.loginUser(
-                        request
-                );
+        User user = userService.loginUser(request);
 
-        String token =
-                jwtUtils.generateToken(
-                        user.getEmail()
-                );
+        String token = jwtUtils.generateToken(
+                user.getEmail(),
+                user.getTokenVersion()
+        );
 
-        UserResponse userResponse =
-                new UserResponse(
-                        user.getId(),
-                        user.getFirstName(),
-                        user.getLastName(),
-                        user.getEmail(),
-                        user.getRole(),
-                        user.getStatus(),
-                        user.isVerified(),
-                        user.getProfilePictureUrl()
-                );
+        UserResponse userResponse = new UserResponse(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getRole(),
+                user.getStatus(),
+                user.isVerified(),
+                user.getProfilePictureUrl()
+        );
 
-        LoginResponse response =
-                new LoginResponse(
-                        token,
-                        userResponse
-                );
+        LoginResponse response = new LoginResponse(
+                token,
+                userResponse
+        );
 
         return new ResponseEntity<>(
                 response,
@@ -185,6 +193,12 @@ public class AuthController {
         );
     }
 
+    /**
+     * Verifies an account using its current verification token.
+     *
+     * @param token verification token
+     * @return verification confirmation
+     */
     @GetMapping("/verify-email")
     @Operation(
             summary = "Verify email",
@@ -197,15 +211,17 @@ public class AuthController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Verification token is invalid or expired"
+                    description = "Verification token has expired"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Verification token not found"
             )
     })
     public ResponseEntity<String> verifyEmail(
             @RequestParam String token) {
 
-        emailVerificationService.verifyEmail(
-                token
-        );
+        emailVerificationService.verifyEmail(token);
 
         return new ResponseEntity<>(
                 "Email verified successfully",
@@ -213,10 +229,72 @@ public class AuthController {
         );
     }
 
+    /**
+     * Requests a replacement email verification link.
+     * Limits requests by both IP address and account email.
+     * The response does not reveal whether the account exists.
+     *
+     * @param httpRequest HTTP request used for rate limiting
+     * @param request validated email information
+     * @return generic request confirmation
+     */
+    @PostMapping("/resend-verification")
+    @Operation(
+            summary = "Resend email verification",
+            description = "Schedules a replacement verification email for an unverified account."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Verification email request accepted"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid email information"
+            ),
+            @ApiResponse(
+                    responseCode = "429",
+                    description = "Too many verification email requests"
+            )
+    })
+    public ResponseEntity<String> resendVerification(
+            HttpServletRequest httpRequest,
+            @Valid @RequestBody ForgotPasswordRequest request) {
+
+        String ipAddress = httpRequest.getRemoteAddr();
+
+        rateLimitService.checkLimit(
+                "resend-verification:" + ipAddress,
+                3,
+                10
+        );
+
+        rateLimitService.checkLimit(
+                "resend-verification-email:" + request.getEmail(),
+                3,
+                10
+        );
+
+        emailVerificationService.resendVerification(
+                request.getEmail()
+        );
+
+        return ResponseEntity.ok(
+                "If the account needs verification, an email will be sent"
+        );
+    }
+
+    /**
+     * Requests a password reset email.
+     *
+     * @param httpRequest HTTP request used for rate limiting
+     * @param request account email
+     * @return request confirmation
+     */
     @PostMapping("/forgot-password")
     @Operation(
             summary = "Request password reset",
-            description = "Creates a password reset request and sends a reset link to the user's email."
+            description = "Creates a password reset request and schedules a reset link to the user's email."
     )
     @ApiResponses({
             @ApiResponse(
@@ -240,8 +318,7 @@ public class AuthController {
             HttpServletRequest httpRequest,
             @Valid @RequestBody ForgotPasswordRequest request) {
 
-        String ipAddress =
-                httpRequest.getRemoteAddr();
+        String ipAddress = httpRequest.getRemoteAddr();
 
         rateLimitService.checkLimit(
                 "forgot-password:" + ipAddress,
@@ -259,10 +336,16 @@ public class AuthController {
         );
     }
 
+    /**
+     * Resets a password and invalidates previously issued JWTs.
+     *
+     * @param request reset token and new password
+     * @return reset confirmation
+     */
     @PostMapping("/reset-password")
     @Operation(
             summary = "Reset password",
-            description = "Resets a user's password using a valid password reset token."
+            description = "Resets a user's password using a valid password reset token and invalidates existing JWTs."
     )
     @ApiResponses({
             @ApiResponse(
@@ -271,7 +354,11 @@ public class AuthController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Reset token is invalid or expired"
+                    description = "Request is invalid or reset token has expired"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Reset token not found"
             )
     })
     public ResponseEntity<String> resetPassword(

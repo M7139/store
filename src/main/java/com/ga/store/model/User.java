@@ -6,6 +6,11 @@ import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * Stores user account information and authentication state.
+ * The token version is increased when the password changes
+ * so previously issued JWTs can be rejected.
+ */
 @Entity
 @Table(name = "users")
 public class User {
@@ -25,6 +30,13 @@ public class User {
 
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
+
+    @Column(
+            name = "token_version",
+            nullable = false,
+            columnDefinition = "bigint default 0"
+    )
+    private long tokenVersion = 0;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -49,21 +61,34 @@ public class User {
     public User() {
     }
 
-    public User(String firstName, String lastName, String email, String passwordHash) {
+    public User(
+            String firstName,
+            String lastName,
+            String email,
+            String passwordHash) {
+
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.passwordHash = passwordHash;
     }
 
+    /**
+     * Initializes timestamps when the user is created.
+     */
     @PrePersist
     public void onCreate() {
+
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
     }
 
+    /**
+     * Updates the modification timestamp before saving changes.
+     */
     @PreUpdate
     public void onUpdate() {
+
         updatedAt = LocalDateTime.now();
     }
 
@@ -105,6 +130,24 @@ public class User {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    /**
+     * Returns the version required for valid JWTs.
+     *
+     * @return current token version
+     */
+    public long getTokenVersion() {
+        return tokenVersion;
+    }
+
+    /**
+     * Changes the version required for valid JWTs.
+     *
+     * @param tokenVersion new token version
+     */
+    public void setTokenVersion(long tokenVersion) {
+        this.tokenVersion = tokenVersion;
     }
 
     public UserRole getRole() {
