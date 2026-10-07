@@ -596,20 +596,6 @@ Current test areas include:
 - Role-based authorization
 - Product service business logic
 
-The tests use JUnit and Mockito.
-
-Run the tests from IntelliJ or with Maven:
-
-```bash
-./mvnw test
-```
-
-On Windows:
-
-```text
-mvnw.cmd test
-```
-
 ## Validation and Error Handling
 
 Request DTOs use Jakarta Bean Validation.
