@@ -9,6 +9,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
+/**
+ * Handles local storage and deletion of product and profile images.
+ */
 @Service
 public class ImageStorageService {
 
@@ -30,6 +33,12 @@ public class ImageStorageService {
         }
     }
 
+    /**
+     * Stores a product image.
+     *
+     * @param file image file
+     * @return public image URL
+     */
     public String saveImage(MultipartFile file) {
 
         return saveImage(
@@ -39,6 +48,12 @@ public class ImageStorageService {
         );
     }
 
+    /**
+     * Stores a user profile image.
+     *
+     * @param file image file
+     * @return public image URL
+     */
     public String saveProfileImage(MultipartFile file) {
 
         return saveImage(
@@ -48,6 +63,14 @@ public class ImageStorageService {
         );
     }
 
+    /**
+     * Validates and saves an image using a unique filename.
+     *
+     * @param file image file
+     * @param uploadDirectory storage directory
+     * @param imageUrlPath public URL prefix
+     * @return public image URL
+     */
     private String saveImage(
             MultipartFile file,
             Path uploadDirectory,
@@ -97,6 +120,11 @@ public class ImageStorageService {
         return imageUrlPath + fileName;
     }
 
+    /**
+     * Deletes a product image.
+     *
+     * @param imageUrl stored image URL
+     */
     public void deleteImage(String imageUrl) {
 
         deleteImage(
@@ -105,6 +133,11 @@ public class ImageStorageService {
         );
     }
 
+    /**
+     * Deletes a user profile image.
+     *
+     * @param imageUrl stored image URL
+     */
     public void deleteProfileImage(String imageUrl) {
 
         deleteImage(
@@ -113,6 +146,12 @@ public class ImageStorageService {
         );
     }
 
+    /**
+     * Deletes a stored image from the supplied directory.
+     *
+     * @param imageUrl image URL
+     * @param uploadDirectory storage directory
+     */
     private void deleteImage(
             String imageUrl,
             Path uploadDirectory) {

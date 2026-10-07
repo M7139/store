@@ -8,6 +8,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+/**
+ * Loads store users for Spring Security authentication.
+ */
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
@@ -19,6 +22,14 @@ public class CustomUserDetailsService implements UserDetailsService {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Loads a user using their email address and converts
+     * the application's user role and status into Spring Security details.
+     *
+     * @param email user's email address
+     * @return Spring Security user details
+     * @throws UsernameNotFoundException if the user does not exist
+     */
     @Override
     public UserDetails loadUserByUsername(
             String email)

@@ -14,6 +14,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Handles customer product reviews and review eligibility rules.
+ */
 @Service
 public class ProductReviewService {
 
@@ -34,6 +37,15 @@ public class ProductReviewService {
         this.productService = productService;
     }
 
+    /**
+     * Creates a product review if the customer has received
+     * the product in a delivered order and has not reviewed it before.
+     *
+     * @param email authenticated customer's email
+     * @param productId product ID
+     * @param request review information
+     * @return created review
+     */
     public ProductReviewResponse createReview(
             String email,
             Long productId,
@@ -97,6 +109,12 @@ public class ProductReviewService {
         );
     }
 
+    /**
+     * Returns all reviews for a product.
+     *
+     * @param productId product ID
+     * @return product reviews
+     */
     public List<ProductReviewResponse> getReviewsByProduct(
             Long productId) {
 
@@ -114,6 +132,12 @@ public class ProductReviewService {
                 .toList();
     }
 
+    /**
+     * Returns all reviews written by a customer.
+     *
+     * @param email authenticated customer's email
+     * @return customer reviews
+     */
     public List<ProductReviewResponse> getReviewsByUser(
             String email) {
 
@@ -129,6 +153,14 @@ public class ProductReviewService {
                 .toList();
     }
 
+    /**
+     * Updates a review if it belongs to the authenticated customer.
+     *
+     * @param email authenticated customer's email
+     * @param reviewId review ID
+     * @param request updated review information
+     * @return updated review
+     */
     public ProductReviewResponse updateReview(
             String email,
             Long reviewId,
@@ -178,6 +210,12 @@ public class ProductReviewService {
         );
     }
 
+    /**
+     * Deletes a review belonging to the authenticated customer.
+     *
+     * @param email authenticated customer's email
+     * @param reviewId review ID
+     */
     public void deleteReview(
             String email,
             Long reviewId) {
@@ -207,6 +245,12 @@ public class ProductReviewService {
         );
     }
 
+    /**
+     * Converts a review entity into an API response.
+     *
+     * @param productReview review entity
+     * @return review response
+     */
     private ProductReviewResponse createProductReviewResponse(
             ProductReview productReview) {
 

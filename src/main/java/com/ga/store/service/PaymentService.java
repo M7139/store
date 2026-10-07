@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Handles order payments and payment status changes.
+ */
 @Service
 public class PaymentService {
 
@@ -33,6 +36,14 @@ public class PaymentService {
         this.userService = userService;
     }
 
+    /**
+     * Creates a payment for a pending order belonging to a customer.
+     *
+     * @param email authenticated customer's email
+     * @param orderId order ID
+     * @param request payment method information
+     * @return created payment
+     */
     public PaymentResponse createPayment(
             String email,
             Long orderId,
@@ -87,6 +98,13 @@ public class PaymentService {
         );
     }
 
+    /**
+     * Returns the payment for an order belonging to a customer.
+     *
+     * @param email authenticated customer's email
+     * @param orderId order ID
+     * @return payment response
+     */
     public PaymentResponse getPaymentByOrder(
             String email,
             Long orderId) {
@@ -121,6 +139,12 @@ public class PaymentService {
         );
     }
 
+    /**
+     * Returns all payments belonging to a customer.
+     *
+     * @param email authenticated customer's email
+     * @return customer payments
+     */
     public List<PaymentResponse> getPaymentsByUser(
             String email) {
 
@@ -134,6 +158,11 @@ public class PaymentService {
                 .toList();
     }
 
+    /**
+     * Returns all payments for administrator use.
+     *
+     * @return all payments
+     */
     public List<PaymentResponse> getAllPayments() {
 
         return paymentRepository.findAll()
@@ -142,6 +171,11 @@ public class PaymentService {
                 .toList();
     }
 
+    /**
+     * Marks a pending payment as paid when the order is delivered.
+     *
+     * @param order delivered order
+     */
     public void markPaymentAsPaid(
             Order order) {
 
@@ -167,6 +201,11 @@ public class PaymentService {
         paymentRepository.save(payment);
     }
 
+    /**
+     * Cancels a pending payment when its order is cancelled.
+     *
+     * @param order cancelled order
+     */
     public void cancelPayment(
             Order order) {
 
@@ -191,6 +230,12 @@ public class PaymentService {
         }
     }
 
+    /**
+     * Converts a payment entity into an API response.
+     *
+     * @param payment payment entity
+     * @return payment response
+     */
     private PaymentResponse createPaymentResponse(
             Payment payment) {
 

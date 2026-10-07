@@ -12,6 +12,10 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Handles password reset token creation, email delivery
+ * and password replacement.
+ */
 @Service
 public class PasswordResetService {
 
@@ -32,6 +36,12 @@ public class PasswordResetService {
         this.emailService = emailService;
     }
 
+    /**
+     * Creates and emails a password reset token for a user.
+     *
+     * @param email account email
+     * @return created reset token
+     */
     public PasswordResetToken requestPasswordReset(String email) {
 
         User user = userRepository.findByEmail(email)
@@ -50,6 +60,13 @@ public class PasswordResetService {
         return resetToken;
     }
 
+    /**
+     * Creates a one-hour password reset token.
+     * Any previous token for the user is removed.
+     *
+     * @param user user requesting reset
+     * @return created reset token
+     */
     public PasswordResetToken createPasswordResetToken(User user) {
 
         passwordResetTokenRepository.findByUser(user)
@@ -69,6 +86,12 @@ public class PasswordResetService {
         return passwordResetTokenRepository.save(resetToken);
     }
 
+    /**
+     * Replaces a user's password using a valid reset token.
+     *
+     * @param token password reset token
+     * @param newPassword new password
+     */
     public void resetPassword(String token, String newPassword) {
 
         PasswordResetToken resetToken =

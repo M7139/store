@@ -7,12 +7,24 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Provides simple in-memory request rate limiting.
+ */
 @Service
 public class RateLimitService {
 
     private final Map<String, RateLimitEntry> attempts =
             new ConcurrentHashMap<>();
 
+    /**
+     * Checks whether a request key has exceeded its allowed
+     * number of requests within a time window.
+     *
+     * @param key unique rate limit key
+     * @param maxAttempts maximum requests allowed
+     * @param windowMinutes time window in minutes
+     * @throws RateLimitExceededException when the limit is exceeded
+     */
     public void checkLimit(
             String key,
             int maxAttempts,
@@ -50,6 +62,10 @@ public class RateLimitService {
         entry.attemptCount++;
     }
 
+    /**
+     * Stores the number of requests and the beginning
+     * of the current rate limit window.
+     */
     private static class RateLimitEntry {
 
         private int attemptCount;

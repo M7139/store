@@ -8,6 +8,9 @@ import com.ga.store.model.User;
 import com.ga.store.repository.AddressRepository;
 import org.springframework.stereotype.Service;
 
+/**
+ * Handles customer home address management.
+ */
 @Service
 public class AddressService {
 
@@ -22,6 +25,14 @@ public class AddressService {
         this.userService = userService;
     }
 
+    /**
+     * Creates a home address for a user.
+     *
+     * @param email authenticated user's email
+     * @param request address information
+     * @return created address
+     * @throws InformationExistsException if the user already has an address
+     */
     public Address createAddress(
             String email,
             AddressRequest request) {
@@ -52,6 +63,13 @@ public class AddressService {
         return addressRepository.save(address);
     }
 
+    /**
+     * Returns the home address belonging to a user.
+     *
+     * @param email authenticated user's email
+     * @return user's saved address
+     * @throws InformationNotFoundException if no address exists
+     */
     public Address getAddressByUser(String email) {
 
         User user = userService.getUserByEmail(email);
@@ -63,6 +81,13 @@ public class AddressService {
                         ));
     }
 
+    /**
+     * Updates a user's existing home address.
+     *
+     * @param email authenticated user's email
+     * @param request updated address information
+     * @return updated address
+     */
     public Address updateAddress(
             String email,
             AddressRequest request) {
@@ -96,6 +121,11 @@ public class AddressService {
         return addressRepository.save(address);
     }
 
+    /**
+     * Deletes the current user's saved home address.
+     *
+     * @param email authenticated user's email
+     */
     public void deleteAddress(String email) {
 
         Address address = getAddressByUser(email);

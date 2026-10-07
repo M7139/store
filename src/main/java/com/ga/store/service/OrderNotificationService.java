@@ -10,12 +10,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Handles real-time order status notifications using Server-Sent Events.
+ */
 @Service
 public class OrderNotificationService {
 
     private final Map<String, List<SseEmitter>> emitters =
             new ConcurrentHashMap<>();
 
+    /**
+     * Creates an SSE connection for a user.
+     *
+     * @param email authenticated user's email
+     * @return SSE emitter connection
+     */
     public SseEmitter subscribe(String email) {
 
         SseEmitter emitter =
@@ -47,6 +56,14 @@ public class OrderNotificationService {
         return emitter;
     }
 
+    /**
+     * Sends an order status event to all active SSE
+     * connections belonging to a user.
+     *
+     * @param email customer email
+     * @param orderId order ID
+     * @param status new order status
+     */
     public void sendOrderStatusUpdate(
             String email,
             Long orderId,
@@ -92,6 +109,12 @@ public class OrderNotificationService {
         );
     }
 
+    /**
+     * Removes a closed or failed SSE connection.
+     *
+     * @param email customer email
+     * @param emitter SSE connection
+     */
     private void removeEmitter(
             String email,
             SseEmitter emitter) {

@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Handles email verification tokens and account verification.
+ */
 @Service
 public class EmailVerificationService {
 
@@ -28,6 +31,13 @@ public class EmailVerificationService {
         this.emailService = emailService;
     }
 
+    /**
+     * Creates a verification token that expires after 24 hours
+     * and sends it to the user.
+     *
+     * @param user user requiring verification
+     * @return saved verification token
+     */
     public EmailVerificationToken createVerificationToken(User user) {
 
         String token = UUID.randomUUID().toString();
@@ -52,6 +62,11 @@ public class EmailVerificationService {
         return savedToken;
     }
 
+    /**
+     * Verifies a user's email using a valid verification token.
+     *
+     * @param token verification token
+     */
     public void verifyEmail(String token) {
 
         EmailVerificationToken verificationToken =

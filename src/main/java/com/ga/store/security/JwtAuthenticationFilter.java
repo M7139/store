@@ -12,6 +12,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Reads JWT bearer tokens from incoming requests and
+ * authenticates valid, active users with Spring Security.
+ */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -27,6 +31,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 customUserDetailsService;
     }
 
+    /**
+     * Checks the Authorization header for a valid JWT.
+     * Valid tokens are used to populate the Spring Security context.
+     * Inactive users are not authenticated.
+     *
+     * @param request HTTP request
+     * @param response HTTP response
+     * @param filterChain remaining security filter chain
+     */
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,

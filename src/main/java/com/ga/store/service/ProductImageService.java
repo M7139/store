@@ -10,6 +10,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+/**
+ * Handles product image upload, retrieval, primary image
+ * selection and deletion.
+ */
 @Service
 public class ProductImageService {
 
@@ -27,6 +31,12 @@ public class ProductImageService {
         this.imageStorageService = imageStorageService;
     }
 
+    /**
+     * Returns all images belonging to a product.
+     *
+     * @param productId product ID
+     * @return product images
+     */
     public List<ProductImage> getImagesByProductId(Long productId) {
 
         getProductById(productId);
@@ -34,6 +44,12 @@ public class ProductImageService {
         return productImageRepository.findByProductId(productId);
     }
 
+    /**
+     * Returns images only if the associated product is active.
+     *
+     * @param productId product ID
+     * @return product images
+     */
     public List<ProductImage> getActiveProductImagesByProductId(
             Long productId) {
 
@@ -42,6 +58,12 @@ public class ProductImageService {
         return productImageRepository.findByProductId(productId);
     }
 
+    /**
+     * Finds a product by ID.
+     *
+     * @param id product ID
+     * @return product
+     */
     private Product getProductById(Long id) {
 
         return productRepository.findById(id)
@@ -51,6 +73,12 @@ public class ProductImageService {
                         ));
     }
 
+    /**
+     * Finds an active product by ID.
+     *
+     * @param id product ID
+     * @return active product
+     */
     private Product getActiveProductById(Long id) {
 
         return productRepository.findByIdAndActiveTrue(id)
@@ -60,6 +88,12 @@ public class ProductImageService {
                         ));
     }
 
+    /**
+     * Finds a product image by ID.
+     *
+     * @param id image ID
+     * @return product image
+     */
     public ProductImage getProductImageById(Long id) {
 
         return productImageRepository.findById(id)
@@ -69,6 +103,12 @@ public class ProductImageService {
                         ));
     }
 
+    /**
+     * Returns the primary image URL for a product.
+     *
+     * @param productId product ID
+     * @return image URL or null if no primary image exists
+     */
     public String getPrimaryImageUrl(Long productId) {
 
         return productImageRepository
@@ -77,6 +117,15 @@ public class ProductImageService {
                 .orElse(null);
     }
 
+    /**
+     * Uploads a new image for a product.
+     * The first uploaded image automatically becomes primary.
+     *
+     * @param file image file
+     * @param productId product ID
+     * @param primaryImage whether the image should be primary
+     * @return created product image
+     */
     public ProductImage uploadProductImage(
             MultipartFile file,
             Long productId,
@@ -114,6 +163,12 @@ public class ProductImageService {
         return productImageRepository.save(productImage);
     }
 
+    /**
+     * Sets an image as the primary image for its product.
+     *
+     * @param id image ID
+     * @return updated image
+     */
     public ProductImage setPrimaryImage(Long id) {
 
         ProductImage productImage =
@@ -134,6 +189,12 @@ public class ProductImageService {
         return productImageRepository.save(productImage);
     }
 
+    /**
+     * Deletes a product image and selects another primary
+     * image when necessary.
+     *
+     * @param id image ID
+     */
     public void deleteProductImage(Long id) {
 
         ProductImage productImage =
@@ -168,6 +229,11 @@ public class ProductImageService {
         }
     }
 
+    /**
+     * Deletes every image belonging to a product.
+     *
+     * @param productId product ID
+     */
     public void deleteImagesByProductId(Long productId) {
 
         List<ProductImage> productImages =

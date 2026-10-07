@@ -20,6 +20,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+/**
+ * Handles user-related business logic including registration,
+ * authentication, profile management, password changes,
+ * profile pictures and account status management.
+ */
 @Service
 public class UserService {
 
@@ -45,10 +50,22 @@ public class UserService {
         this.imageStorageService = imageStorageService;
     }
 
+    /**
+     * Returns all registered users.
+     *
+     * @return list of all users
+     */
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
+    /**
+     * Finds a user by their ID.
+     *
+     * @param id user ID
+     * @return matching user
+     * @throws InformationNotFoundException if the user does not exist
+     */
     public User getUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() ->
@@ -57,6 +74,13 @@ public class UserService {
                         ));
     }
 
+    /**
+     * Finds a user by their email address.
+     *
+     * @param email user email address
+     * @return matching user
+     * @throws InformationNotFoundException if the user does not exist
+     */
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() ->
@@ -65,10 +89,25 @@ public class UserService {
                         ));
     }
 
+    /**
+     * Checks whether a user account already exists for an email address.
+     *
+     * @param email email address to check
+     * @return true if the email already exists
+     */
     public boolean emailExists(String email) {
         return userRepository.existsByEmail(email);
     }
 
+    /**
+     * Registers a new customer account.
+     * The password is hashed before storage and an email
+     * verification token is created for the new user.
+     *
+     * @param request registration information
+     * @return newly created user
+     * @throws InformationExistsException if the email is already registered
+     */
     public User registerUser(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -108,6 +147,16 @@ public class UserService {
         return savedUser;
     }
 
+    /**
+     * Authenticates a user using their email and password.
+     * Inactive and unverified users are prevented from logging in.
+     *
+     * @param request login credentials
+     * @return authenticated user
+     * @throws InvalidCredentialsException if the credentials are incorrect
+     * @throws InactiveAccountException if the account is inactive
+     * @throws EmailNotVerifiedException if the email has not been verified
+     */
     public User loginUser(LoginRequest request) {
 
         User user =
@@ -172,6 +221,15 @@ public class UserService {
         return user;
     }
 
+    /**
+     * Changes the password of the currently authenticated user.
+     * The current password must be correct before the new
+     * password is accepted.
+     *
+     * @param email authenticated user's email
+     * @param request current and new password information
+     * @throws InvalidCredentialsException if the current password is incorrect
+     */
     public void changePassword(
             String email,
             ChangePasswordRequest request) {
@@ -210,6 +268,14 @@ public class UserService {
         );
     }
 
+    /**
+     * Updates the first and last name of the currently
+     * authenticated user.
+     *
+     * @param email authenticated user's email
+     * @param request updated profile information
+     * @return updated user
+     */
     public User updateProfile(
             String email,
             UpdateProfileRequest request) {
@@ -236,6 +302,14 @@ public class UserService {
         return savedUser;
     }
 
+    /**
+     * Uploads or replaces the profile picture of the
+     * currently authenticated user.
+     *
+     * @param email authenticated user's email
+     * @param file image file to upload
+     * @return updated user
+     */
     public User uploadProfilePicture(
             String email,
             MultipartFile file) {
@@ -274,6 +348,15 @@ public class UserService {
         return savedUser;
     }
 
+    /**
+     * Updates a user's account status.
+     * This operation is used by administrators to activate
+     * or deactivate user accounts.
+     *
+     * @param userId ID of the user being updated
+     * @param request new user status
+     * @return updated user
+     */
     public User updateUserStatus(
             Long userId,
             UserStatusRequest request) {

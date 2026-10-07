@@ -15,6 +15,10 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Handles product management, public product availability,
+ * searching, filtering, pagination and sorting.
+ */
 @Service
 public class ProductService {
 
@@ -32,14 +36,35 @@ public class ProductService {
         this.productImageService = productImageService;
     }
 
+    /**
+     * Returns all products including inactive products.
+     *
+     * @return all products
+     */
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
 
+    /**
+     * Returns only active products.
+     *
+     * @return active products
+     */
     public List<Product> getActiveProducts() {
         return productRepository.findByActiveTrue();
     }
 
+    /**
+     * Searches active products with optional category filtering,
+     * pagination and sorting.
+     *
+     * @param search optional product name search
+     * @param categoryId optional category ID
+     * @param page page number
+     * @param size page size
+     * @param sort sort field and direction
+     * @return page of matching products
+     */
     public Page<Product> searchActiveProducts(
             String search,
             Long categoryId,
@@ -140,6 +165,12 @@ public class ProductService {
                 );
     }
 
+    /**
+     * Finds any product by ID.
+     *
+     * @param id product ID
+     * @return matching product
+     */
     public Product getProductById(Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() ->
@@ -150,6 +181,12 @@ public class ProductService {
                         ));
     }
 
+    /**
+     * Finds an active product by ID.
+     *
+     * @param id product ID
+     * @return active product
+     */
     public Product getActiveProductById(Long id) {
         return productRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() ->
@@ -160,6 +197,12 @@ public class ProductService {
                         ));
     }
 
+    /**
+     * Finds a product by name without case sensitivity.
+     *
+     * @param name product name
+     * @return matching product if present
+     */
     public Optional<Product> getProductByName(
             String name) {
 
@@ -169,6 +212,12 @@ public class ProductService {
                 );
     }
 
+    /**
+     * Returns products belonging to a category.
+     *
+     * @param categoryId category ID
+     * @return products in category
+     */
     public List<Product> getProductsByCategoryId(
             Long categoryId) {
 
@@ -178,6 +227,12 @@ public class ProductService {
                 );
     }
 
+    /**
+     * Returns active products belonging to a category.
+     *
+     * @param categoryId category ID
+     * @return active products in category
+     */
     public List<Product> getActiveProductsByCategoryId(
             Long categoryId) {
 
@@ -191,6 +246,12 @@ public class ProductService {
                 );
     }
 
+    /**
+     * Checks whether a product name already exists.
+     *
+     * @param name product name
+     * @return true if the product exists
+     */
     public boolean productExists(
             String name) {
 
@@ -200,6 +261,12 @@ public class ProductService {
                 );
     }
 
+    /**
+     * Creates a new product.
+     *
+     * @param request product information
+     * @return created product
+     */
     public Product createProduct(
             ProductRequest request) {
 
@@ -235,6 +302,13 @@ public class ProductService {
         );
     }
 
+    /**
+     * Updates an existing product.
+     *
+     * @param id product ID
+     * @param request updated product information
+     * @return updated product
+     */
     public Product updateProduct(
             Long id,
             ProductRequest request) {
@@ -292,6 +366,11 @@ public class ProductService {
         );
     }
 
+    /**
+     * Deletes a product and its associated uploaded images.
+     *
+     * @param id product ID
+     */
     public void deleteProduct(
             Long id) {
 
@@ -308,6 +387,13 @@ public class ProductService {
         );
     }
 
+    /**
+     * Activates or deactivates a product.
+     *
+     * @param id product ID
+     * @param active requested active state
+     * @return updated product
+     */
     public Product updateProductStatus(
             Long id,
             boolean active) {

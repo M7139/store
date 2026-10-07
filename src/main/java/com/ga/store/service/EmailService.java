@@ -5,6 +5,10 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+/**
+ * Handles application emails including verification,
+ * password recovery and order status notifications.
+ */
 @Service
 public class EmailService {
 
@@ -17,6 +21,12 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
+    /**
+     * Sends an account verification email.
+     *
+     * @param toEmail recipient email
+     * @param verificationToken verification token
+     */
     public void sendVerificationEmail(
             String toEmail,
             String verificationToken) {
@@ -40,6 +50,12 @@ public class EmailService {
         mailSender.send(message);
     }
 
+    /**
+     * Sends a password reset email.
+     *
+     * @param toEmail recipient email
+     * @param resetToken password reset token
+     */
     public void sendPasswordResetEmail(
             String toEmail,
             String resetToken) {
@@ -64,6 +80,12 @@ public class EmailService {
         mailSender.send(message);
     }
 
+    /**
+     * Sends an order confirmation email.
+     *
+     * @param toEmail customer email
+     * @param orderId order ID
+     */
     public void sendOrderConfirmedEmail(
             String toEmail,
             Long orderId) {
@@ -87,6 +109,12 @@ public class EmailService {
         mailSender.send(message);
     }
 
+    /**
+     * Sends an order cancellation email.
+     *
+     * @param toEmail customer email
+     * @param orderId order ID
+     */
     public void sendOrderCancelledEmail(
             String toEmail,
             Long orderId) {
@@ -109,6 +137,12 @@ public class EmailService {
         mailSender.send(message);
     }
 
+    /**
+     * Sends an order delivery email.
+     *
+     * @param toEmail customer email
+     * @param orderId order ID
+     */
     public void sendOrderDeliveredEmail(
             String toEmail,
             Long orderId) {

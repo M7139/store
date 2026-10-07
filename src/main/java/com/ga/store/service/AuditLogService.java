@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Handles the creation and retrieval of persistent audit records.
+ */
 @Service
 public class AuditLogService {
 
@@ -18,6 +21,13 @@ public class AuditLogService {
                 auditLogRepository;
     }
 
+    /**
+     * Creates a permanent audit record for an important system action.
+     *
+     * @param userId ID of the user who performed the action
+     * @param action action name
+     * @param description description of what occurred
+     */
     public void createAuditLog(
             Long userId,
             String action,
@@ -35,6 +45,11 @@ public class AuditLogService {
         );
     }
 
+    /**
+     * Returns all audit logs ordered from newest to oldest.
+     *
+     * @return audit log history
+     */
     public List<AuditLog> getAllAuditLogs() {
 
         return auditLogRepository

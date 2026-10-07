@@ -22,6 +22,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Handles checkout, order history, cancellation, stock allocation
+ * and the order status workflow.
+ */
 @Service
 public class OrderService {
 
@@ -65,6 +69,14 @@ public class OrderService {
         this.orderNotificationService = orderNotificationService;
     }
 
+    /**
+     * Converts the user's cart into an order.
+     * Products are locked during checkout to prevent concurrent
+     * orders from overselling stock.
+     *
+     * @param email authenticated customer's email
+     * @return created order response
+     */
     @Transactional
     public OrderResponse checkout(String email) {
 
@@ -253,6 +265,12 @@ public class OrderService {
         );
     }
 
+    /**
+     * Returns all orders belonging to a customer.
+     *
+     * @param email authenticated customer's email
+     * @return customer's orders
+     */
     public List<OrderResponse> getOrdersByUser(
             String email) {
 
@@ -268,6 +286,13 @@ public class OrderService {
                 .toList();
     }
 
+    /**
+     * Returns an order only if it belongs to the authenticated customer.
+     *
+     * @param email authenticated customer's email
+     * @param orderId order ID
+     * @return matching order
+     */
     public OrderResponse getOrderByIdForUser(
             String email,
             Long orderId) {
@@ -293,6 +318,14 @@ public class OrderService {
         return createOrderResponse(order);
     }
 
+    /**
+     * Cancels a customer's pending or confirmed order
+     * and restores its allocated stock.
+     *
+     * @param email authenticated customer's email
+     * @param orderId order ID
+     * @return cancelled order
+     */
     @Transactional
     public OrderResponse cancelOrder(
             String email,
@@ -367,6 +400,11 @@ public class OrderService {
         return createOrderResponse(savedOrder);
     }
 
+    /**
+     * Returns all orders for administrator use.
+     *
+     * @return all orders
+     */
     public List<OrderResponse> getAllOrders() {
 
         return orderRepository.findAll()
@@ -375,6 +413,15 @@ public class OrderService {
                 .toList();
     }
 
+    /**
+     * Changes an order's status according to the permitted workflow.
+     * Appropriate email, payment and real-time notification actions
+     * are also performed.
+     *
+     * @param orderId order ID
+     * @param request requested status
+     * @return updated order
+     */
     @Transactional
     public OrderResponse updateOrderStatus(
             Long orderId,
@@ -455,6 +502,12 @@ public class OrderService {
         return createOrderResponse(savedOrder);
     }
 
+    /**
+     * Validates whether an order status transition is allowed.
+     *
+     * @param currentStatus existing status
+     * @param newStatus requested status
+     */
     private void validateStatusTransition(
             OrderStatus currentStatus,
             OrderStatus newStatus) {
@@ -496,6 +549,11 @@ public class OrderService {
         }
     }
 
+    /**
+     * Returns quantities from a cancelled order back to product stock.
+     *
+     * @param order cancelled order
+     */
     private void restoreOrderStock(
             Order order) {
 
@@ -528,6 +586,12 @@ public class OrderService {
         );
     }
 
+    /**
+     * Converts an order entity into an API response.
+     *
+     * @param order order entity
+     * @return order response
+     */
     private OrderResponse createOrderResponse(
             Order order) {
 

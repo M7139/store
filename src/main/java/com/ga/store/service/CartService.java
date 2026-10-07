@@ -18,6 +18,10 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Handles shopping cart creation, products, quantities,
+ * totals and cart item ownership.
+ */
 @Service
 public class CartService {
 
@@ -41,6 +45,12 @@ public class CartService {
         this.productImageService = productImageService;
     }
 
+    /**
+     * Returns the user's cart or creates one if none exists.
+     *
+     * @param email authenticated user's email
+     * @return user's cart
+     */
     public Cart getOrCreateCart(String email) {
 
         User user = userService.getUserByEmail(email);
@@ -52,6 +62,15 @@ public class CartService {
                 });
     }
 
+    /**
+     * Adds a product to the user's cart.
+     * If the product is already present, the quantities are combined.
+     *
+     * @param email authenticated user's email
+     * @param request product and quantity information
+     * @return created or updated cart item
+     * @throws InformationExistsException if the requested quantity exceeds stock
+     */
     public CartItem addItemToCart(
             String email,
             CartItemRequest request) {
@@ -104,6 +123,12 @@ public class CartService {
         return cartItemRepository.save(cartItem);
     }
 
+    /**
+     * Returns the user's cart with item information and total cost.
+     *
+     * @param email authenticated user's email
+     * @return cart response
+     */
     public CartResponse getCart(String email) {
 
         Cart cart = getOrCreateCart(email);
@@ -130,6 +155,14 @@ public class CartService {
         );
     }
 
+    /**
+     * Updates the quantity of an item belonging to the user's cart.
+     *
+     * @param email authenticated user's email
+     * @param cartItemId cart item ID
+     * @param request new quantity
+     * @return updated cart item
+     */
     public CartItem updateCartItemQuantity(
             String email,
             Long cartItemId,
@@ -172,6 +205,12 @@ public class CartService {
         return cartItemRepository.save(cartItem);
     }
 
+    /**
+     * Removes an item from the user's cart.
+     *
+     * @param email authenticated user's email
+     * @param cartItemId cart item ID
+     */
     public void removeCartItem(
             String email,
             Long cartItemId) {
@@ -196,6 +235,11 @@ public class CartService {
         cartItemRepository.delete(cartItem);
     }
 
+    /**
+     * Removes every item from the user's cart.
+     *
+     * @param email authenticated user's email
+     */
     public void clearCart(String email) {
 
         Cart cart = getOrCreateCart(email);
@@ -206,6 +250,12 @@ public class CartService {
         cartItemRepository.deleteAll(cartItems);
     }
 
+    /**
+     * Converts a cart item into its API response representation.
+     *
+     * @param cartItem cart item
+     * @return cart item response
+     */
     private CartItemResponse createCartItemResponse(
             CartItem cartItem) {
 
