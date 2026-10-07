@@ -5,6 +5,7 @@ import com.ga.store.model.Product;
 import com.ga.store.model.ProductImage;
 import com.ga.store.repository.ProductImageRepository;
 import com.ga.store.repository.ProductRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -120,12 +121,15 @@ public class ProductImageService {
     /**
      * Uploads a new image for a product.
      * The first uploaded image automatically becomes primary.
+     * If the database transaction fails, the newly uploaded
+     * physical image file is removed.
      *
      * @param file image file
      * @param productId product ID
      * @param primaryImage whether the image should be primary
      * @return created product image
      */
+    @Transactional
     public ProductImage uploadProductImage(
             MultipartFile file,
             Long productId,
@@ -136,6 +140,12 @@ public class ProductImageService {
 
         String imageUrl =
                 imageStorageService.saveImage(file);
+
+        TransactionActions.afterRollback(() ->
+                imageStorageService.deleteImage(
+                        imageUrl
+                )
+        );
 
         List<ProductImage> existingImages =
                 productImageRepository.findByProductId(productId);
@@ -149,8 +159,12 @@ public class ProductImageService {
             productImageRepository
                     .findByProductIdAndPrimaryImageTrue(productId)
                     .ifPresent(existingPrimaryImage -> {
+
                         existingPrimaryImage.setPrimaryImage(false);
-                        productImageRepository.save(existingPrimaryImage);
+
+                        productImageRepository.save(
+                                existingPrimaryImage
+                        );
                     });
         }
 
@@ -165,10 +179,12 @@ public class ProductImageService {
 
     /**
      * Sets an image as the primary image for its product.
+     * The primary image changes happen within one transaction.
      *
      * @param id image ID
      * @return updated image
      */
+    @Transactional
     public ProductImage setPrimaryImage(Long id) {
 
         ProductImage productImage =
@@ -180,8 +196,12 @@ public class ProductImageService {
         productImageRepository
                 .findByProductIdAndPrimaryImageTrue(productId)
                 .ifPresent(existingPrimaryImage -> {
+
                     existingPrimaryImage.setPrimaryImage(false);
-                    productImageRepository.save(existingPrimaryImage);
+
+                    productImageRepository.save(
+                            existingPrimaryImage
+                    );
                 });
 
         productImage.setPrimaryImage(true);
@@ -192,9 +212,12 @@ public class ProductImageService {
     /**
      * Deletes a product image and selects another primary
      * image when necessary.
+     * The physical image file is deleted only after the
+     * database transaction commits successfully.
      *
      * @param id image ID
      */
+    @Transactional
     public void deleteProductImage(Long id) {
 
         ProductImage productImage =
@@ -206,9 +229,8 @@ public class ProductImageService {
         boolean wasPrimary =
                 productImage.isPrimaryImage();
 
-        imageStorageService.deleteImage(
-                productImage.getImageUrl()
-        );
+        String imageUrl =
+                productImage.getImageUrl();
 
         productImageRepository.delete(productImage);
 
@@ -224,16 +246,27 @@ public class ProductImageService {
 
                 newPrimaryImage.setPrimaryImage(true);
 
-                productImageRepository.save(newPrimaryImage);
+                productImageRepository.save(
+                        newPrimaryImage
+                );
             }
         }
+
+        TransactionActions.afterCommit(() ->
+                imageStorageService.deleteImage(
+                        imageUrl
+                )
+        );
     }
 
     /**
      * Deletes every image belonging to a product.
+     * Database image records are removed inside the transaction.
+     * Physical image files are deleted only after a successful commit.
      *
      * @param productId product ID
      */
+    @Transactional
     public void deleteImagesByProductId(Long productId) {
 
         List<ProductImage> productImages =
@@ -241,11 +274,18 @@ public class ProductImageService {
 
         for (ProductImage productImage : productImages) {
 
-            imageStorageService.deleteImage(
-                    productImage.getImageUrl()
+            String imageUrl =
+                    productImage.getImageUrl();
+
+            productImageRepository.delete(
+                    productImage
             );
 
-            productImageRepository.delete(productImage);
+            TransactionActions.afterCommit(() ->
+                    imageStorageService.deleteImage(
+                            imageUrl
+                    )
+            );
         }
     }
 }

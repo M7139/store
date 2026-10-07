@@ -315,7 +315,8 @@ public class OrderService {
 
         User user = userService.getUserByEmail(email);
 
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository
+                .findByIdForUpdate(orderId)
                 .orElseThrow(() ->
                         new InformationNotFoundException(
                                 "Order not found"
@@ -405,7 +406,8 @@ public class OrderService {
             Long orderId,
             OrderStatusRequest request) {
 
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository
+                .findByIdForUpdate(orderId)
                 .orElseThrow(() ->
                         new InformationNotFoundException(
                                 "Order not found"

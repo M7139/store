@@ -305,7 +305,7 @@ public class OrderServiceTest {
                 email
         )).thenReturn(user);
 
-        when(orderRepository.findById(
+        when(orderRepository.findByIdForUpdate(
                 orderId
         )).thenReturn(
                 Optional.of(order)
@@ -381,7 +381,7 @@ public class OrderServiceTest {
                 email
         )).thenReturn(user);
 
-        when(orderRepository.findById(
+        when(orderRepository.findByIdForUpdate(
                 orderId
         )).thenReturn(
                 Optional.of(order)

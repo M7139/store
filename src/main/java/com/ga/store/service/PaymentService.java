@@ -55,7 +55,8 @@ public class PaymentService {
 
         User user = userService.getUserByEmail(email);
 
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository
+                .findByIdForUpdate(orderId)
                 .orElseThrow(() ->
                         new InformationNotFoundException(
                                 "Order not found"
