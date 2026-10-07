@@ -7,6 +7,11 @@ import com.ga.store.dto.UserStatusRequest;
 import com.ga.store.model.User;
 import com.ga.store.service.AuditLogService;
 import com.ga.store.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -20,6 +25,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
+@Tag(
+        name = "Users",
+        description = "User profile and admin user management"
+)
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
     private final UserService userService;
@@ -34,6 +44,20 @@ public class UserController {
     }
 
     @GetMapping("/me")
+    @Operation(
+            summary = "Get current user",
+            description = "Returns the profile of the currently authenticated user."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User profile returned successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required"
+            )
+    })
     public ResponseEntity<UserResponse> getCurrentUser(
             Authentication authentication) {
 
@@ -52,17 +76,34 @@ public class UserController {
     }
 
     @PutMapping("/me")
+    @Operation(
+            summary = "Update current user profile",
+            description = "Updates the profile information of the currently authenticated user."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Profile updated successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid profile information"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required"
+            )
+    })
     public ResponseEntity<UserResponse> updateProfile(
             Authentication authentication,
             @Valid @RequestBody UpdateProfileRequest request) {
 
         String email = authentication.getName();
 
-        User user =
-                userService.updateProfile(
-                        email,
-                        request
-                );
+        User user = userService.updateProfile(
+                email,
+                request
+        );
 
         UserResponse response =
                 createUserResponse(user);
@@ -77,6 +118,24 @@ public class UserController {
             value = "/me/profile-picture",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
+    @Operation(
+            summary = "Upload profile picture",
+            description = "Uploads or replaces the profile picture of the currently authenticated user."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Profile picture uploaded successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid file"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required"
+            )
+    })
     public ResponseEntity<UserResponse> uploadProfilePicture(
             Authentication authentication,
             @RequestParam("file") MultipartFile file) {
@@ -99,6 +158,24 @@ public class UserController {
     }
 
     @PatchMapping("/me/password")
+    @Operation(
+            summary = "Change password",
+            description = "Changes the password of the currently authenticated user."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Password changed successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid password information"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required or current password is incorrect"
+            )
+    })
     public ResponseEntity<String> changePassword(
             Authentication authentication,
             @Valid @RequestBody ChangePasswordRequest request) {
@@ -118,6 +195,24 @@ public class UserController {
 
     @GetMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Get all users",
+            description = "Returns all registered users. Admin access only."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Users returned successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Admin access required"
+            )
+    })
     public ResponseEntity<List<UserResponse>> getAllUsers() {
 
         List<UserResponse> response =
@@ -134,6 +229,28 @@ public class UserController {
 
     @GetMapping("/admin/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Get user by ID",
+            description = "Returns a specific user by ID. Admin access only."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User returned successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Admin access required"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found"
+            )
+    })
     public ResponseEntity<UserResponse> getUserById(
             @PathVariable Long userId) {
 
@@ -153,6 +270,32 @@ public class UserController {
 
     @PatchMapping("/admin/{userId}/status")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Update user status",
+            description = "Changes a user's status between ACTIVE and INACTIVE. Admin access only."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User status updated successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid user status"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Admin access required"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found"
+            )
+    })
     public ResponseEntity<UserResponse> updateUserStatus(
             Authentication authentication,
             @PathVariable Long userId,
