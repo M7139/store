@@ -286,28 +286,25 @@ public class AuthController {
 
     /**
      * Requests a password reset email.
+     * The response does not reveal whether the account exists.
      *
      * @param httpRequest HTTP request used for rate limiting
      * @param request account email
-     * @return request confirmation
+     * @return generic request confirmation
      */
     @PostMapping("/forgot-password")
     @Operation(
             summary = "Request password reset",
-            description = "Creates a password reset request and schedules a reset link to the user's email."
+            description = "Schedules a password reset email when an account exists for the supplied email."
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Password reset request created"
+                    description = "Password reset request accepted"
             ),
             @ApiResponse(
                     responseCode = "400",
                     description = "Invalid request information"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "User not found"
             ),
             @ApiResponse(
                     responseCode = "429",
@@ -326,13 +323,18 @@ public class AuthController {
                 10
         );
 
+        rateLimitService.checkLimit(
+                "forgot-password-email:" + request.getEmail(),
+                3,
+                10
+        );
+
         passwordResetService.requestPasswordReset(
                 request.getEmail()
         );
 
-        return new ResponseEntity<>(
-                "Password reset request created",
-                HttpStatus.OK
+        return ResponseEntity.ok(
+                "If an account exists with this email, a password reset email will be sent"
         );
     }
 

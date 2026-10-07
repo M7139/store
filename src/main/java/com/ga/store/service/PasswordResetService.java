@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -42,18 +43,22 @@ public class PasswordResetService {
     /**
      * Creates a password reset token and schedules email delivery
      * after the database transaction commits.
+     * Unknown email addresses are ignored so the API does not
+     * reveal whether an account exists.
      *
      * @param email account email
-     * @return created reset token
      */
     @Transactional
-    public PasswordResetToken requestPasswordReset(String email) {
+    public void requestPasswordReset(String email) {
 
-        User user = userRepository.findByEmailForUpdate(email)
-                .orElseThrow(() ->
-                        new InformationNotFoundException(
-                                "User with this email not found"
-                        ));
+        Optional<User> optionalUser =
+                userRepository.findByEmailForUpdate(email);
+
+        if (optionalUser.isEmpty()) {
+            return;
+        }
+
+        User user = optionalUser.get();
 
         PasswordResetToken resetToken =
                 createPasswordResetToken(user);
@@ -62,8 +67,6 @@ public class PasswordResetService {
                 user.getEmail(),
                 resetToken.getToken()
         );
-
-        return resetToken;
     }
 
     /**
