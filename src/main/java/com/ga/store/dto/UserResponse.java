@@ -2,16 +2,44 @@ package com.ga.store.dto;
 
 import com.ga.store.enums.UserRole;
 import com.ga.store.enums.UserStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public class UserResponse {
 
+    @Schema(example = "2")
     private Long id;
+
+    @Schema(example = "Ahmed")
     private String firstName;
+
+    @Schema(example = "Ali")
     private String lastName;
+
+    @Schema(example = "user@example.com")
     private String email;
+
+    @Schema(
+            example = "CUSTOMER",
+            allowableValues = {
+                    "CUSTOMER",
+                    "ADMIN"
+            }
+    )
     private UserRole role;
+
+    @Schema(
+            example = "ACTIVE",
+            allowableValues = {
+                    "ACTIVE",
+                    "INACTIVE"
+            }
+    )
     private UserStatus status;
+
+    @Schema(example = "true")
     private boolean verified;
+
+    @Schema(example = "/uploads/profile-pictures/user-2.jpg")
     private String profilePictureUrl;
 
     public UserResponse() {

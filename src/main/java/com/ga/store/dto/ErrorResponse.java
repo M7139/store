@@ -1,13 +1,24 @@
 package com.ga.store.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.LocalDateTime;
 
 public class ErrorResponse {
 
+    @Schema(example = "2026-10-07T08:30:00")
     private LocalDateTime timestamp;
+
+    @Schema(example = "404")
     private int status;
+
+    @Schema(example = "Not Found")
     private String error;
+
+    @Schema(example = "Order not found")
     private String message;
+
+    @Schema(example = "/api/orders/me/100")
     private String path;
 
     public ErrorResponse() {

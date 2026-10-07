@@ -1,12 +1,19 @@
 package com.ga.store.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.math.BigDecimal;
 import java.util.List;
 
 public class CartResponse {
 
+    @Schema(example = "1")
     private Long id;
+
+    @Schema(description = "Items currently in the cart")
     private List<CartItemResponse> items;
+
+    @Schema(example = "12.50")
     private BigDecimal total;
 
     public CartResponse() {

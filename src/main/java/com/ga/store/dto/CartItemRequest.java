@@ -1,13 +1,22 @@
 package com.ga.store.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 public class CartItemRequest {
 
+    @Schema(
+            description = "Product ID",
+            example = "1"
+    )
     @NotNull(message = "Product id is required")
     private Long productId;
 
+    @Schema(
+            description = "Quantity to add to the cart",
+            example = "2"
+    )
     @Min(value = 1, message = "Quantity must be at least 1")
     private int quantity;
 

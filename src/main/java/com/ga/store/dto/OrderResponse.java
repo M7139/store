@@ -1,6 +1,7 @@
 package com.ga.store.dto;
 
 import com.ga.store.enums.OrderStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -8,18 +9,37 @@ import java.util.List;
 
 public class OrderResponse {
 
+    @Schema(example = "6")
     private Long id;
+
+    @Schema(
+            description = "Current order status",
+            example = "CONFIRMED"
+    )
     private OrderStatus status;
+
+    @Schema(example = "12.00")
     private BigDecimal totalAmount;
 
+    @Schema(example = "123")
     private String house;
+
+    @Schema(example = "456")
     private String road;
+
+    @Schema(example = "789")
     private String block;
+
+    @Schema(example = "Manama")
     private String area;
+
+    @Schema(example = "+97333123456")
     private String phoneNumber;
 
+    @Schema(description = "Products included in the order")
     private List<OrderItemResponse> items;
 
+    @Schema(example = "2026-10-07T08:30:00")
     private LocalDateTime createdAt;
 
     public OrderResponse() {

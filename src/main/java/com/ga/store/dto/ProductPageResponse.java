@@ -1,13 +1,24 @@
 package com.ga.store.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 
 public class ProductPageResponse {
 
+    @Schema(description = "Products on the current page")
     private List<ProductResponse> content;
+
+    @Schema(example = "0")
     private int page;
+
+    @Schema(example = "10")
     private int size;
+
+    @Schema(example = "12")
     private long totalElements;
+
+    @Schema(example = "2")
     private int totalPages;
 
     public ProductPageResponse() {

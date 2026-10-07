@@ -2,17 +2,29 @@ package com.ga.store.dto;
 
 import com.ga.store.enums.PaymentMethod;
 import com.ga.store.enums.PaymentStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class PaymentResponse {
 
+    @Schema(example = "1")
     private Long id;
+
+    @Schema(example = "6")
     private Long orderId;
+
+    @Schema(example = "12.00")
     private BigDecimal amount;
+
+    @Schema(example = "CASH_ON_DELIVERY")
     private PaymentMethod paymentMethod;
+
+    @Schema(example = "PENDING")
     private PaymentStatus status;
+
+    @Schema(example = "2026-10-07T08:30:00")
     private LocalDateTime createdAt;
 
     public PaymentResponse() {

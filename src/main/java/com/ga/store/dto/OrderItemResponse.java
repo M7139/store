@@ -1,14 +1,27 @@
 package com.ga.store.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.math.BigDecimal;
 
 public class OrderItemResponse {
 
+    @Schema(example = "1")
     private Long id;
+
+    @Schema(example = "3")
     private Long productId;
+
+    @Schema(example = "Lavender Soap")
     private String productName;
+
+    @Schema(example = "2.50")
     private BigDecimal price;
+
+    @Schema(example = "2")
     private int quantity;
+
+    @Schema(example = "5.00")
     private BigDecimal subtotal;
 
     public OrderItemResponse() {

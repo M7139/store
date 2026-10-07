@@ -1,12 +1,25 @@
 package com.ga.store.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 public class AddressResponse {
 
+    @Schema(example = "1")
     private Long id;
+
+    @Schema(example = "123")
     private String house;
+
+    @Schema(example = "456")
     private String road;
+
+    @Schema(example = "789")
     private String block;
+
+    @Schema(example = "Manama")
     private String area;
+
+    @Schema(example = "+97333123456")
     private String phoneNumber;
 
     public AddressResponse() {

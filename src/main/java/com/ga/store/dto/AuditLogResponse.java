@@ -1,13 +1,29 @@
 package com.ga.store.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.LocalDateTime;
 
 public class AuditLogResponse {
 
+    @Schema(example = "1")
     private Long id;
+
+    @Schema(
+            description = "ID of the user who performed the action",
+            example = "1"
+    )
     private Long userId;
+
+    @Schema(example = "ORDER_STATUS_CHANGED")
     private String action;
+
+    @Schema(
+            example = "Changed order 6 status to PROCESSING"
+    )
     private String description;
+
+    @Schema(example = "2026-10-07T08:30:00")
     private LocalDateTime createdAt;
 
     public AuditLogResponse() {

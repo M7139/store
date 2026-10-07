@@ -1,10 +1,22 @@
 package com.ga.store.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 public class ProductImageResponse {
 
+    @Schema(example = "1")
     private Long id;
+
+    @Schema(
+            description = "URL of the uploaded product image",
+            example = "/uploads/products/lavender-soap.jpg"
+    )
     private String imageUrl;
+
+    @Schema(example = "true")
     private boolean primaryImage;
+
+    @Schema(example = "1")
     private Long productId;
 
     public ProductImageResponse() {

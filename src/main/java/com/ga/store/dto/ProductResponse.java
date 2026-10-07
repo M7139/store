@@ -1,17 +1,36 @@
 package com.ga.store.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.math.BigDecimal;
 
 public class ProductResponse {
 
+    @Schema(example = "1")
     private Long id;
+
+    @Schema(example = "Lavender Soap")
     private String name;
+
+    @Schema(example = "Handcrafted lavender scented soap")
     private String description;
+
+    @Schema(example = "2.50")
     private BigDecimal price;
+
+    @Schema(example = "20")
     private int stockQuantity;
+
+    @Schema(example = "true")
     private boolean active;
+
+    @Schema(example = "1")
     private Long categoryId;
+
+    @Schema(example = "Bar Soap")
     private String categoryName;
+
+    @Schema(example = "/uploads/products/lavender-soap.jpg")
     private String primaryImageUrl;
 
     public ProductResponse() {

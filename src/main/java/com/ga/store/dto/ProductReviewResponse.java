@@ -1,16 +1,33 @@
 package com.ga.store.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.LocalDateTime;
 
 public class ProductReviewResponse {
 
+    @Schema(example = "1")
     private Long id;
+
+    @Schema(example = "3")
     private Long productId;
+
+    @Schema(example = "2")
     private Long userId;
+
+    @Schema(example = "Mohamed Rashad")
     private String userName;
+
+    @Schema(example = "5")
     private int rating;
+
+    @Schema(example = "Great soap and smells very nice.")
     private String comment;
+
+    @Schema(example = "2026-10-07T08:30:00")
     private LocalDateTime createdAt;
+
+    @Schema(example = "2026-10-07T08:45:00")
     private LocalDateTime updatedAt;
 
     public ProductReviewResponse() {
