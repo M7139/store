@@ -339,6 +339,7 @@ http://localhost:9091/v3/api-docs
 POST /api/auth/register
 POST /api/auth/login
 GET  /api/auth/verify-email
+POST /api/auth/resend-verification
 POST /api/auth/forgot-password
 POST /api/auth/reset-password
 ```
