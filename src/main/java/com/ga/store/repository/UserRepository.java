@@ -15,19 +15,53 @@ import java.util.Optional;
 public interface UserRepository
         extends JpaRepository<User, Long> {
 
-    Optional<User> findByEmail(String email);
-
-    boolean existsByEmail(String email);
+    /**
+     * Finds a user by email without case sensitivity.
+     *
+     * @param email user email
+     * @return matching user if present
+     */
+    @Query("""
+            SELECT u
+            FROM User u
+            WHERE LOWER(u.email) = LOWER(:email)
+            """)
+    Optional<User> findByEmail(
+            @Param("email") String email
+    );
 
     /**
-     * Finds and locks a user by email.
+     * Checks whether an email already exists without
+     * case sensitivity.
+     *
+     * @param email email to check
+     * @return true if the email exists
+     */
+    @Query("""
+            SELECT CASE
+                WHEN COUNT(u) > 0 THEN true
+                ELSE false
+            END
+            FROM User u
+            WHERE LOWER(u.email) = LOWER(:email)
+            """)
+    boolean existsByEmail(
+            @Param("email") String email
+    );
+
+    /**
+     * Finds and locks a user by email without case sensitivity.
      * Must be called within a transaction.
      *
      * @param email user email
      * @return matching user if present
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT u FROM User u WHERE u.email = :email")
+    @Query("""
+            SELECT u
+            FROM User u
+            WHERE LOWER(u.email) = LOWER(:email)
+            """)
     Optional<User> findByEmailForUpdate(
             @Param("email") String email
     );
@@ -40,7 +74,11 @@ public interface UserRepository
      * @return matching user if present
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT u FROM User u WHERE u.id = :id")
+    @Query("""
+            SELECT u
+            FROM User u
+            WHERE u.id = :id
+            """)
     Optional<User> findByIdForUpdate(
             @Param("id") Long id
     );

@@ -45,18 +45,14 @@ public interface ProductRepository
             SELECT p
             FROM Product p
             WHERE p.active = true
-            AND (
-                :search IS NULL
-                OR LOWER(p.name)
-                LIKE LOWER(CONCAT('%', :search, '%'))
-            )
+            AND LOWER(p.name) LIKE :searchPattern
             AND (
                 :categoryId IS NULL
                 OR p.category.id = :categoryId
             )
             """)
     Page<Product> searchActiveProducts(
-            @Param("search") String search,
+            @Param("searchPattern") String searchPattern,
             @Param("categoryId") Long categoryId,
             Pageable pageable
     );

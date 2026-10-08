@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Handles user-related business logic including registration,
@@ -71,12 +72,15 @@ public class UserService {
         return userRepository.findById(id)
                 .orElseThrow(() ->
                         new InformationNotFoundException(
-                                "User with id " + id + " not found"
+                                "User with id "
+                                        + id
+                                        + " not found"
                         ));
     }
 
     /**
-     * Finds a user by their email address.
+     * Finds a user by their email address
+     * without case sensitivity.
      *
      * @param email user email address
      * @return matching user
@@ -84,7 +88,11 @@ public class UserService {
      */
     public User getUserByEmail(String email) {
 
-        return userRepository.findByEmail(email)
+        String normalizedEmail =
+                normalizeEmail(email);
+
+        return userRepository
+                .findByEmail(normalizedEmail)
                 .orElseThrow(() ->
                         new InformationNotFoundException(
                                 "User with this email not found"
@@ -99,9 +107,16 @@ public class UserService {
      * @return locked user
      * @throws InformationNotFoundException if the user does not exist
      */
-    private User getUserByEmailForUpdate(String email) {
+    private User getUserByEmailForUpdate(
+            String email) {
 
-        return userRepository.findByEmailForUpdate(email)
+        String normalizedEmail =
+                normalizeEmail(email);
+
+        return userRepository
+                .findByEmailForUpdate(
+                        normalizedEmail
+                )
                 .orElseThrow(() ->
                         new InformationNotFoundException(
                                 "User with this email not found"
@@ -109,18 +124,23 @@ public class UserService {
     }
 
     /**
-     * Checks whether a user account already exists for an email address.
+     * Checks whether a user account already exists for
+     * an email address without case sensitivity.
      *
      * @param email email address to check
      * @return true if the email already exists
      */
-    public boolean emailExists(String email) {
+    public boolean emailExists(
+            String email) {
 
-        return userRepository.existsByEmail(email);
+        return userRepository.existsByEmail(
+                normalizeEmail(email)
+        );
     }
 
     /**
      * Registers a new customer account.
+     * Email addresses are stored in lowercase.
      * The password is hashed before storage and an email
      * verification token is created for the new user.
      * The user and verification token are saved in one transaction.
@@ -131,9 +151,16 @@ public class UserService {
      * @throws InformationExistsException if the email is already registered
      */
     @Transactional
-    public User registerUser(RegisterRequest request) {
+    public User registerUser(
+            RegisterRequest request) {
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String normalizedEmail =
+                normalizeEmail(
+                        request.getEmail()
+                );
+
+        if (userRepository.existsByEmail(
+                normalizedEmail)) {
 
             logger.warn(
                     "Registration failed because email already exists"
@@ -144,22 +171,28 @@ public class UserService {
             );
         }
 
-        String passwordHash = passwordEncoder.encode(
-                request.getPassword()
-        );
+        String passwordHash =
+                passwordEncoder.encode(
+                        request.getPassword()
+                );
 
-        User user = new User(
-                request.getFirstName(),
-                request.getLastName(),
-                request.getEmail(),
-                passwordHash
-        );
+        User user =
+                new User(
+                        request.getFirstName(),
+                        request.getLastName(),
+                        normalizedEmail,
+                        passwordHash
+                );
 
-        User savedUser = userRepository.save(user);
+        User savedUser =
+                userRepository.save(
+                        user
+                );
 
-        emailVerificationService.createVerificationToken(
-                savedUser
-        );
+        emailVerificationService
+                .createVerificationToken(
+                        savedUser
+                );
 
         logger.info(
                 "User registered successfully with id {}",
@@ -171,6 +204,7 @@ public class UserService {
 
     /**
      * Authenticates a user using their email and password.
+     * Email matching is case-insensitive.
      * Inactive and unverified users are prevented from logging in.
      *
      * @param request login credentials
@@ -179,20 +213,29 @@ public class UserService {
      * @throws InactiveAccountException if the account is inactive
      * @throws EmailNotVerifiedException if the email has not been verified
      */
-    public User loginUser(LoginRequest request) {
+    public User loginUser(
+            LoginRequest request) {
 
-        User user = userRepository
-                .findByEmail(request.getEmail())
-                .orElseThrow(() -> {
+        String normalizedEmail =
+                normalizeEmail(
+                        request.getEmail()
+                );
 
-                    logger.warn(
-                            "Login failed because user was not found"
-                    );
+        User user =
+                userRepository
+                        .findByEmail(
+                                normalizedEmail
+                        )
+                        .orElseThrow(() -> {
 
-                    return new InvalidCredentialsException(
-                            "Invalid email or password"
-                    );
-                });
+                            logger.warn(
+                                    "Login failed because user was not found"
+                            );
+
+                            return new InvalidCredentialsException(
+                                    "Invalid email or password"
+                            );
+                        });
 
         if (!passwordEncoder.matches(
                 request.getPassword(),
@@ -208,7 +251,9 @@ public class UserService {
             );
         }
 
-        if (user.getStatus().name().equals("INACTIVE")) {
+        if (user.getStatus()
+                .name()
+                .equals("INACTIVE")) {
 
             logger.warn(
                     "Login blocked for inactive user id {}",
@@ -255,7 +300,10 @@ public class UserService {
             String email,
             ChangePasswordRequest request) {
 
-        User user = getUserByEmailForUpdate(email);
+        User user =
+                getUserByEmailForUpdate(
+                        email
+                );
 
         if (!passwordEncoder.matches(
                 request.getCurrentPassword(),
@@ -271,17 +319,22 @@ public class UserService {
             );
         }
 
-        String newPasswordHash = passwordEncoder.encode(
-                request.getNewPassword()
-        );
+        String newPasswordHash =
+                passwordEncoder.encode(
+                        request.getNewPassword()
+                );
 
-        user.setPasswordHash(newPasswordHash);
+        user.setPasswordHash(
+                newPasswordHash
+        );
 
         user.setTokenVersion(
                 user.getTokenVersion() + 1
         );
 
-        userRepository.save(user);
+        userRepository.save(
+                user
+        );
 
         logger.info(
                 "Password changed successfully for user id {}",
@@ -303,7 +356,10 @@ public class UserService {
             String email,
             UpdateProfileRequest request) {
 
-        User user = getUserByEmailForUpdate(email);
+        User user =
+                getUserByEmailForUpdate(
+                        email
+                );
 
         user.setFirstName(
                 request.getFirstName().trim()
@@ -313,7 +369,10 @@ public class UserService {
                 request.getLastName().trim()
         );
 
-        User savedUser = userRepository.save(user);
+        User savedUser =
+                userRepository.save(
+                        user
+                );
 
         logger.info(
                 "Profile updated for user id {}",
@@ -338,31 +397,44 @@ public class UserService {
             String email,
             MultipartFile file) {
 
-        User user = getUserByEmailForUpdate(email);
+        User user =
+                getUserByEmailForUpdate(
+                        email
+                );
 
         String oldProfilePicture =
                 user.getProfilePictureUrl();
 
         String profilePictureUrl =
-                imageStorageService.saveProfileImage(file);
+                imageStorageService
+                        .saveProfileImage(
+                                file
+                        );
 
         TransactionActions.afterRollback(() ->
-                imageStorageService.deleteProfileImage(
-                        profilePictureUrl
-                )
+                imageStorageService
+                        .deleteProfileImage(
+                                profilePictureUrl
+                        )
         );
 
-        user.setProfilePictureUrl(profilePictureUrl);
+        user.setProfilePictureUrl(
+                profilePictureUrl
+        );
 
-        User savedUser = userRepository.save(user);
+        User savedUser =
+                userRepository.save(
+                        user
+                );
 
         if (oldProfilePicture != null
                 && !oldProfilePicture.isBlank()) {
 
             TransactionActions.afterCommit(() ->
-                    imageStorageService.deleteProfileImage(
-                            oldProfilePicture
-                    )
+                    imageStorageService
+                            .deleteProfileImage(
+                                    oldProfilePicture
+                            )
             );
         }
 
@@ -389,17 +461,26 @@ public class UserService {
             Long userId,
             UserStatusRequest request) {
 
-        User user = userRepository.findByIdForUpdate(userId)
-                .orElseThrow(() ->
-                        new InformationNotFoundException(
-                                "User with id "
-                                        + userId
-                                        + " not found"
-                        ));
+        User user =
+                userRepository
+                        .findByIdForUpdate(
+                                userId
+                        )
+                        .orElseThrow(() ->
+                                new InformationNotFoundException(
+                                        "User with id "
+                                                + userId
+                                                + " not found"
+                                ));
 
-        user.setStatus(request.getStatus());
+        user.setStatus(
+                request.getStatus()
+        );
 
-        User savedUser = userRepository.save(user);
+        User savedUser =
+                userRepository.save(
+                        user
+                );
 
         logger.info(
                 "User id {} status changed to {}",
@@ -408,5 +489,22 @@ public class UserService {
         );
 
         return savedUser;
+    }
+
+    /**
+     * Normalizes email addresses so authentication
+     * and account lookups are case-insensitive.
+     *
+     * @param email email address
+     * @return trimmed lowercase email
+     */
+    private String normalizeEmail(
+            String email) {
+
+        return email
+                .trim()
+                .toLowerCase(
+                        Locale.ROOT
+                );
     }
 }
